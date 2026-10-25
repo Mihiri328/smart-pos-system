@@ -24,9 +24,9 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 12 || password.length > 72) {
+    if (password.length < 6) {
       setMessageType("error");
-      setMessage("Password must be between 12 and 72 characters.");
+      setMessage("Password must be grater than 6 charactors.");
       return;
     }
 
@@ -137,7 +137,7 @@ export default function ResetPassword() {
                 disabled={loading}
                 required
               />
-
+              <br></br>
               <label htmlFor="confirm-password">
                 Confirm Password
               </label>
@@ -165,6 +165,9 @@ export default function ResetPassword() {
                   }
                   disabled={loading}
                 />
+                <br></br>
+                <br></br>
+                <br></br>
                 <span>Show password</span>
               </label>
 
@@ -186,9 +189,9 @@ export default function ResetPassword() {
               >
                 {loading ? "Resetting Password..." : "Reset Password"}
               </button>
-
+              <br></br>
               <a className="back-to-login" href="/">
-                Back to Login
+                <h6>Back to Login</h6>
               </a>
             </form>
 

@@ -8,6 +8,6 @@ import "./style.css";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <LoginPage />
+    <App/>
   </StrictMode>
 );

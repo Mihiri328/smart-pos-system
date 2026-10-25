@@ -1,16 +1,26 @@
 import { useState } from "react";
 
+import ResetPassword from "./pages/ResetPassword";
 import ProductManagement from "./pages/ProductManagement";
 import Inventory from "./pages/Inventory";
 import SupplierManagement from "./pages/SupplierManagement";
 import LoginPage from "./pages/LoginPage";
+
 import "./App.css";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentPage, setCurrentPage] = useState("products");
 
-  // Show login page first
+  // Normalize the URL path
+  const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+
+  // IMPORTANT: Reset password must be accessible without login
+  if (pathname === "/reset-password") {
+    return <ResetPassword />;
+  }
+
+  // Show login page if the user is not logged in
   if (!isLoggedIn) {
     return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
   }

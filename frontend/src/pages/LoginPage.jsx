@@ -1,4 +1,5 @@
 import { useState } from "react";
+import logo from "../img/white logo.png";
 import { ShoppingCart, Eye, EyeOff } from "lucide-react";
 import {
   login,
@@ -119,14 +120,8 @@ export default function LoginPage({ onLogin }) {
               onClick={(event) => event.preventDefault()}
             >
               <span className="brand-icon">
-                <ShoppingCart size={34} strokeWidth={2.8} />
-              </span>
-
-              <span className="brand-copy">
-                <strong>Smart POS</strong>
-                <br />
-                <small>AI powered System</small>
-              </span>
+                <img src={logo} alt="Smart POS Logo" className="brand-logo" width={220}/>
+                </span>
             </a>
 
             {/* Welcome Message */}

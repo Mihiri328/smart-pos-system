@@ -12,34 +12,26 @@ function App() {
 
   return (
     <div>
-      {currentPage === "products" && <ProductManagement />}
+      {currentPage === "products" && (
+  <ProductManagement
+    currentPage={currentPage}
+    onNavigate={setCurrentPage}
+  />
+)}
 
-      {currentPage === "inventory" && <Inventory />}
+{currentPage === "inventory" && (
+  <Inventory
+    currentPage={currentPage}
+    onNavigate={setCurrentPage}
+  />
+)}
 
-      {currentPage === "suppliers" && <SupplierManagement />}
-
-      <div className="page-navigation">
-        <button
-          className={currentPage === "products" ? "active" : ""}
-          onClick={() => setCurrentPage("products")}
-        >
-          Products
-        </button>
-
-        <button
-          className={currentPage === "inventory" ? "active" : ""}
-          onClick={() => setCurrentPage("inventory")}
-        >
-          Inventory
-        </button>
-
-        <button
-          className={currentPage === "suppliers" ? "active" : ""}
-          onClick={() => setCurrentPage("suppliers")}
-        >
-          Suppliers
-        </button>
-      </div>
+{currentPage === "suppliers" && (
+  <SupplierManagement
+    currentPage={currentPage}
+    onNavigate={setCurrentPage}
+  />
+)}
     </div>
   );
 }

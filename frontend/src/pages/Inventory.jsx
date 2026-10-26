@@ -167,7 +167,7 @@ function TrendChart() {
   );
 }
 
-export default function Inventory() {
+export default function Inventory({ onNavigate, currentPage }) {
   const [items, setItems] = useState(initialItems);
   const [search, setSearch] = useState("");
   const [globalSearch, setGlobalSearch] = useState("");
@@ -231,10 +231,10 @@ export default function Inventory() {
   }, [items, search, globalSearch, filter, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
+  const currentPageNumber = Math.min(page, totalPages);
   const visibleItems = filteredItems.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    (currentPageNumber - 1) * pageSize,
+    currentPageNumber * pageSize
   );
 
   const lowStockCount = items.filter((item) => {
@@ -486,22 +486,40 @@ export default function Inventory() {
         </div>
 
         <nav className="inv-nav">
-          {navItems.map(([icon, label]) => (
-            <button
-              type="button"
-              key={label}
-              className={`inv-nav-item ${label === "Inventory" ? "active" : ""}`}
-              onClick={() => {
-                if (label !== "Inventory") {
-                  setNotice(`${label} page is not connected yet.`);
-                }
-              }}
-            >
-              <span className="inv-nav-icon">{icon}</span>
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
+  {navItems.map(([icon, label]) => {
+    const pageMap = {
+      "Products Management": "products",
+      Inventory: "inventory",
+      "Suppliers Management": "suppliers",
+    };
+
+    const activeLabel = {
+      products: "Products Management",
+      inventory: "Inventory",
+      suppliers: "Suppliers Management",
+    }[currentPage];
+
+    return (
+      <button
+        type="button"
+        key={label}
+        className={`inv-nav-item ${
+          label === activeLabel ? "active" : ""
+        }`}
+        onClick={() => {
+          if (pageMap[label] && onNavigate) {
+            onNavigate(pageMap[label]);
+          } else {
+            setNotice(`${label} page is not connected yet.`);
+          }
+        }}
+      >
+        <span className="inv-nav-icon">{icon}</span>
+        <span>{label}</span>
+      </button>
+    );
+  })}
+</nav>
       </aside>
 
       <main className="inv-main">

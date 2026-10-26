@@ -52,7 +52,7 @@ const money = (value) =>
     maximumFractionDigits: 2,
   });
 
-export default function ProductManagement() {
+export default function ProductManagement({ onNavigate }) {
   const [products, setProducts] = useState(initialProducts);
   const [categories, setCategories] = useState(initialCategories);
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -332,13 +332,27 @@ export default function ProductManagement() {
               type="button"
               key={item.label}
               className={`pm-nav-item ${
-                item.label === "Products Management" ? "active" : ""
-              }`}
-              onClick={() => {
-                if (item.label !== "Products Management") {
-                  setNotice(`${item.label} page is not connected yet.`);
-                }
-              }}
+  ({
+    products: "Products Management",
+    inventory: "Inventory",
+    suppliers: "Suppliers Management",
+  }[currentPage] === item.label) ? "active" : ""
+}`}
+              
+onClick={() => {
+  const pageMap = {
+    "Products Management": "products",
+    Inventory: "inventory",
+    "Suppliers Management": "suppliers",
+  };
+
+  if (pageMap[item.label] && onNavigate) {
+    onNavigate(pageMap[item.label]);
+  } else {
+    setNotice(`${item.label} page is not connected yet.`);
+  }
+}}
+
             >
               <span className="pm-nav-icon">{item.icon}</span>
               <span>{item.label}</span>

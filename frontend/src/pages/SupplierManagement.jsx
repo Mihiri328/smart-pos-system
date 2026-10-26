@@ -81,7 +81,7 @@ const menuItems = [
   ["⇥", "Logout"],
 ];
 
-export default function SupplierManagement() {
+export default function SupplierManagement({ onNavigate, currentPage }) {
   const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
@@ -161,24 +161,40 @@ export default function SupplierManagement() {
         </div>
 
         <nav className="side-menu">
-          {menuItems.map(([icon, label]) => (
-            <button
-              type="button"
-              key={label}
-              className={`side-link ${
-                label === "Suppliers Management" ? "selected" : ""
-              }`}
-              onClick={() => {
-                if (label !== "Suppliers Management") {
-                  setNotice(`${label} page navigation is not connected yet.`);
-                  setTimeout(() => setNotice(""), 2500);
-                }
-              }}
-            >
-              <span className="side-icon">{icon}</span>
-              <span>{label}</span>
-            </button>
-          ))}
+          {menuItems.map(([icon, label]) => {
+  const pageMap = {
+    "Products Management": "products",
+    Inventory: "inventory",
+    "Suppliers Management": "suppliers",
+  };
+
+  const activeLabel = {
+    products: "Products Management",
+    inventory: "Inventory",
+    suppliers: "Suppliers Management",
+  }[currentPage];
+
+  return (
+    <button
+      type="button"
+      key={label}
+      className={`side-link ${
+        label === activeLabel ? "selected" : ""
+      }`}
+      onClick={() => {
+        if (pageMap[label] && onNavigate) {
+          onNavigate(pageMap[label]);
+        } else {
+          setNotice(`${label} page navigation is not connected yet.`);
+          setTimeout(() => setNotice(""), 2500);
+        }
+      }}
+    >
+      <span className="side-icon">{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+})}
         </nav>
       </aside>
 

@@ -27,6 +27,27 @@ function App() {
 
   return (
     <div>
+ mihiri
+      {currentPage === "products" && (
+  <ProductManagement
+    currentPage={currentPage}
+    onNavigate={setCurrentPage}
+  />
+)}
+
+{currentPage === "inventory" && (
+  <Inventory
+    currentPage={currentPage}
+    onNavigate={setCurrentPage}
+  />
+)}
+
+{currentPage === "suppliers" && (
+  <SupplierManagement
+    currentPage={currentPage}
+    onNavigate={setCurrentPage}
+  />
+)}
       {currentPage === "products" && <ProductManagement />}
       {currentPage === "inventory" && <Inventory />}
       {currentPage === "suppliers" && <SupplierManagement />}
@@ -57,6 +78,7 @@ function App() {
           Logout
         </button>
       </div>
+main
     </div>
   );
 }

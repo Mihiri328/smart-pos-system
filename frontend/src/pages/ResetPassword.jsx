@@ -1,4 +1,5 @@
 import { useState } from "react";
+import logo from "../img/white logo.png";
 import { resetPassword } from "../services/authService.js";
 
 export default function ResetPassword() {
@@ -108,15 +109,10 @@ export default function ResetPassword() {
         {/* Right Panel */}
         <div className="form-panel">
           <div className="form-content">
-            <div className="brand">
-              <span className="brand-icon">SP</span>
-
-              <span className="brand-copy">
-                <strong>Smart POS</strong>
-                <br />
-                <small>AI powered System</small>
-              </span>
-            </div>
+            <span className="brand-icon">
+                            <img src={logo} alt="Smart POS Logo" className="brand-logo" width={220}/>
+                            </span>
+                            <br></br>
 
             <div className="welcome-copy">
               <h2>Reset Password</h2>

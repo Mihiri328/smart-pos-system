@@ -1,5 +1,6 @@
 
 import React, { useMemo, useState } from "react";
+import logo from "../img/Dark logo.jpeg";
 
 const initialProducts = [
   { id: 1, name: "Samba Rice (1kg)", sku: "PRD001", category: "Grains & Rice", unit: "Pack", price: 220, stock: 50, status: "In Stock" },
@@ -318,12 +319,9 @@ export default function ProductManagement({ onNavigate }) {
       <aside className="pm-sidebar">
         <div className="pm-brand">
           <div className="pm-brand-icon">
-            <span>🛒</span>
-          </div>
-          <div>
-            <h2>Smart POS</h2>
-            <p>AI Powered System</p>
-          </div>
+  <img src={logo} alt="Smart POS Logo" />
+</div>
+          
         </div>
 
         <nav className="pm-navigation">
@@ -958,16 +956,22 @@ const styles = `
 
 .pm-brand-icon {
   width: 76px;
-  height: 65px;
+  height: 50px;
   display: grid;
   place-items: center;
   color: #ff9c27;
   font-size: 49px;
+  margin-top: -10px;
 }
 
-.pm-brand-icon span {
-  filter: saturate(1.1);
+.pm-brand-icon img {
+  width: 180px;
+  height: 170px;
+  object-fit: contain;
+  display: block;
+  transform: translate(20px, -50px);
 }
+
 
 .pm-brand h2 {
   font-size: 28px;

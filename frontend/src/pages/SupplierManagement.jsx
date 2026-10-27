@@ -1,6 +1,7 @@
 
 import { useMemo, useState } from "react";
 import "./SupplierManagement.css";
+import logo from "../img/Dark logo.jpeg";
 
 const initialSuppliers = [
   {
@@ -153,11 +154,8 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
     <div className="supplier-app">
       <aside className="supplier-sidebar">
         <div className="brand">
-          <div className="brand-symbol">🛒</div>
-          <div>
-            <h2>Smart POS</h2>
-            <span>AI Powered System</span>
-          </div>
+          <img src={logo} alt="Smart POS Logo" className="brand-logo" />
+          
         </div>
 
         <nav className="side-menu">

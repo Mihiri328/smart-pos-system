@@ -4,6 +4,9 @@ import ResetPassword from "./pages/ResetPassword";
 import ProductManagement from "./pages/ProductManagement";
 import Inventory from "./pages/Inventory";
 import SupplierManagement from "./pages/SupplierManagement";
+import CustomerManagement from "./pages/CustomerManagement";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import LoginPage from "./pages/LoginPage";
 
 import "./App.css";
@@ -51,6 +54,9 @@ function App() {
       {currentPage === "products" && <ProductManagement />}
       {currentPage === "inventory" && <Inventory />}
       {currentPage === "suppliers" && <SupplierManagement />}
+      {currentPage === "customers" && <CustomerManagement />}
+      {currentPage === "reports" && <Reports />}
+      {currentPage === "settings" && <Settings />}
 
       <div className="page-navigation">
         <button
@@ -73,6 +79,17 @@ function App() {
         >
           Suppliers
         </button>
+        <button onClick={() => setCurrentPage("customers")}>
+  Customer Management
+</button>
+
+<button onClick={() => setCurrentPage("reports")}>
+  Reports
+</button>
+
+<button onClick={() => setCurrentPage("settings")}>
+  Settings
+</button>
 
         <button onClick={() => setIsLoggedIn(false)}>
           Logout

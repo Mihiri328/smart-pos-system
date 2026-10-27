@@ -1,5 +1,6 @@
 
 import React, { useMemo, useState } from "react";
+import logo from "../img/Dark logo.jpeg";
 
 const initialItems = [
   { id: "01", name: "Samba Rice (1kg)", category: "Grocery", sku: "SK000001", cost: 180, price: 220, stock: 75, status: "Active" },
@@ -478,11 +479,8 @@ export default function Inventory({ onNavigate, currentPage }) {
 
       <aside className="inv-sidebar">
         <div className="inv-brand">
-          <span className="inv-brand-cart">🛒</span>
-          <div>
-            <h2>Smart POS</h2>
-            <p>AI Powered System</p>
-          </div>
+          <img src={logo} alt="Smart POS Logo" className="inv-brand-logo" />
+          
         </div>
 
         <nav className="inv-nav">
@@ -1086,17 +1084,23 @@ const inventoryStyles = `
 }
 
 .inv-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 12px;
-  margin-bottom: 51px;
+  width: 76px;
+  height: 80px;
+  display: grid;
+  place-items: center;
+  color: #ff9c27;
+  font-size: 49px;
+  margin-top: -10px;
 }
 
-.inv-brand-cart {
-  width: 76px;
-  font-size: 48px;
+.inv-brand-logo {
+  width: 180px;
+  height: 170px;
+  object-fit: contain;
+  display: block;
+  transform: translate(20px, -50px);
 }
+
 
 .inv-brand h2 {
   font-size: 28px;

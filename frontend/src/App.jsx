@@ -1,3 +1,4 @@
+```jsx
 import { useState } from "react";
 
 import ResetPassword from "./pages/ResetPassword";
@@ -11,6 +12,7 @@ import SalesHistory from "./pages/SalesHistory";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import LoginPage from "./pages/LoginPage";
+import PurchaseOrder from "./pages/PurchaseOrder";
 
 import "./App.css";
 
@@ -21,12 +23,10 @@ function App() {
   const pathname =
     window.location.pathname.replace(/\/+$/, "") || "/";
 
-  // Reset password page
   if (pathname === "/reset-password") {
     return <ResetPassword />;
   }
 
-  // Login page
   if (!isLoggedIn) {
     return (
       <LoginPage
@@ -38,7 +38,6 @@ function App() {
     );
   }
 
-  // Main application pages
   const pageProps = {
     currentPage,
     onNavigate: setCurrentPage,
@@ -58,6 +57,7 @@ function App() {
     sales_history: <SalesHistory {...pageProps} />,
     reports: <Reports {...pageProps} />,
     settings: <Settings {...pageProps} />,
+    "Purchase Orders": <PurchaseOrder {...pageProps} />,
   };
 
   const navigation = [
@@ -67,9 +67,10 @@ function App() {
     ["inventory", "Inventory"],
     ["suppliers", "Suppliers"],
     ["customers", "Customer Management"],
-    ["sales_history", "SalesHistory"], 
+    ["sales_history", "Sales History"],
     ["reports", "Reports"],
     ["settings", "Settings"],
+    ["Purchase Orders", "Purchase Orders"],
   ];
 
   return (
@@ -100,3 +101,4 @@ function App() {
 }
 
 export default App;
+```

@@ -7,6 +7,7 @@ import ProductManagement from "./pages/ProductManagement";
 import Inventory from "./pages/Inventory";
 import SupplierManagement from "./pages/SupplierManagement";
 import CustomerManagement from "./pages/CustomerManagement";
+import SalesHistory from "./pages/SalesHistory";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import LoginPage from "./pages/LoginPage";
@@ -54,6 +55,7 @@ function App() {
     inventory: <Inventory {...pageProps} />,
     suppliers: <SupplierManagement {...pageProps} />,
     customers: <CustomerManagement {...pageProps} />,
+    sales_history: <SalesHistory {...pageProps} />,
     reports: <Reports {...pageProps} />,
     settings: <Settings {...pageProps} />,
   };
@@ -65,6 +67,7 @@ function App() {
     ["inventory", "Inventory"],
     ["suppliers", "Suppliers"],
     ["customers", "Customer Management"],
+    ["sales_history", "SalesHistory"], 
     ["reports", "Reports"],
     ["settings", "Settings"],
   ];

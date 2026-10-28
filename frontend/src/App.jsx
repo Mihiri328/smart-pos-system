@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 import ResetPassword from "./pages/ResetPassword";
@@ -5,6 +6,7 @@ import ProductManagement from "./pages/ProductManagement";
 import Inventory from "./pages/Inventory";
 import SupplierManagement from "./pages/SupplierManagement";
 import LoginPage from "./pages/LoginPage";
+import PurchaseOrder from "./pages/PurchaseOrder";
 
 import "./App.css";
 
@@ -13,44 +15,49 @@ function App() {
   const [currentPage, setCurrentPage] = useState("products");
 
   // Normalize the URL path
-  const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+  const pathname =
+    window.location.pathname.replace(/\/+$/, "") || "/";
 
-  // IMPORTANT: Reset password must be accessible without login
+  // Reset password page
   if (pathname === "/reset-password") {
     return <ResetPassword />;
   }
 
-  // Show login page if the user is not logged in
+  // Login page
   if (!isLoggedIn) {
     return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
   }
 
   return (
     <div>
- mihiri
       {currentPage === "products" && (
-  <ProductManagement
-    currentPage={currentPage}
-    onNavigate={setCurrentPage}
-  />
-)}
+        <ProductManagement
+          currentPage={currentPage}
+          onNavigate={setCurrentPage}
+        />
+      )}
 
-{currentPage === "inventory" && (
-  <Inventory
-    currentPage={currentPage}
-    onNavigate={setCurrentPage}
-  />
-)}
+      {currentPage === "inventory" && (
+        <Inventory
+          currentPage={currentPage}
+          onNavigate={setCurrentPage}
+        />
+      )}
 
-{currentPage === "suppliers" && (
-  <SupplierManagement
+      {currentPage === "suppliers" && (
+        <SupplierManagement
+          currentPage={currentPage}
+          onNavigate={setCurrentPage}
+        />
+      )}
+
+      {currentPage === "Purchase Orders" && (
+  <PurchaseOrder
     currentPage={currentPage}
     onNavigate={setCurrentPage}
+    onLogout={() => setIsLoggedIn(false)}
   />
 )}
-      {currentPage === "products" && <ProductManagement />}
-      {currentPage === "inventory" && <Inventory />}
-      {currentPage === "suppliers" && <SupplierManagement />}
 
       <div className="page-navigation">
         <button
@@ -74,11 +81,19 @@ function App() {
           Suppliers
         </button>
 
+        <button
+          className={
+            currentPage === "Purchase Orders" ? "active" : ""
+          }
+          onClick={() => setCurrentPage("Purchase Orders")}
+        >
+          Purchase Orders
+        </button>
+
         <button onClick={() => setIsLoggedIn(false)}>
           Logout
         </button>
       </div>
-main
     </div>
   );
 }

@@ -1,4 +1,3 @@
-```jsx
 import { useState } from "react";
 
 import ResetPassword from "./pages/ResetPassword";
@@ -18,103 +17,78 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentPage, setCurrentPage] = useState("dashboard");
 
-  const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+  const pathname =
+    window.location.pathname.replace(/\/+$/, "") || "/";
 
+  // Reset password page
   if (pathname === "/reset-password") {
     return <ResetPassword />;
   }
 
+  // Login page
   if (!isLoggedIn) {
-    return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+    return (
+      <LoginPage
+        onLogin={() => {
+          setCurrentPage("dashboard");
+          setIsLoggedIn(true);
+        }}
+      />
+    );
   }
+
+  // Main application pages
+  const pageProps = {
+    currentPage,
+    onNavigate: setCurrentPage,
+    onLogout: () => {
+      setIsLoggedIn(false);
+      setCurrentPage("dashboard");
+    },
+  };
+
+  const pages = {
+    dashboard: <Dashboard {...pageProps} />,
+    billing: <Billing {...pageProps} />,
+    products: <ProductManagement {...pageProps} />,
+    inventory: <Inventory {...pageProps} />,
+    suppliers: <SupplierManagement {...pageProps} />,
+    customers: <CustomerManagement {...pageProps} />,
+    reports: <Reports {...pageProps} />,
+    settings: <Settings {...pageProps} />,
+  };
+
+  const navigation = [
+    ["dashboard", "Dashboard"],
+    ["billing", "Billing"],
+    ["products", "Products"],
+    ["inventory", "Inventory"],
+    ["suppliers", "Suppliers"],
+    ["customers", "Customer Management"],
+    ["reports", "Reports"],
+    ["settings", "Settings"],
+  ];
 
   return (
     <div>
-      {currentPage === "dashboard" && (
-        <Dashboard onNavigate={setCurrentPage} />
-      )}
-
-      {currentPage === "billing" && (
-        <Billing
-          onNavigate={setCurrentPage}
-          onLogout={() => setIsLoggedIn(false)}
-        />
-      )}
-
-      {currentPage === "products" && (
-        <ProductManagement
-          currentPage={currentPage}
-          onNavigate={setCurrentPage}
-        />
-      )}
-
-      {currentPage === "inventory" && (
-        <Inventory
-          currentPage={currentPage}
-          onNavigate={setCurrentPage}
-        />
-      )}
-
-      {currentPage === "suppliers" && (
-        <SupplierManagement
-          currentPage={currentPage}
-          onNavigate={setCurrentPage}
-        />
-      )}
-
-      {currentPage === "customers" && <CustomerManagement />}
-      {currentPage === "reports" && <Reports />}
-      {currentPage === "settings" && <Settings />}
+      {pages[currentPage] || pages.dashboard}
 
       <div className="page-navigation">
-        <button
-          className={currentPage === "dashboard" ? "active" : ""}
-          onClick={() => setCurrentPage("dashboard")}
-        >
-          Dashboard
-        </button>
+        {navigation.map(([page, label]) => (
+          <button
+            key={page}
+            type="button"
+            className={currentPage === page ? "active" : ""}
+            onClick={() => setCurrentPage(page)}
+          >
+            {label}
+          </button>
+        ))}
 
         <button
-          className={currentPage === "billing" ? "active" : ""}
-          onClick={() => setCurrentPage("billing")}
+          type="button"
+          onClick={pageProps.onLogout}
         >
-          Billing
-        </button>
-
-        <button
-          className={currentPage === "products" ? "active" : ""}
-          onClick={() => setCurrentPage("products")}
-        >
-          Products
-        </button>
-
-        <button
-          className={currentPage === "inventory" ? "active" : ""}
-          onClick={() => setCurrentPage("inventory")}
-        >
-          Inventory
-        </button>
-
-        <button
-          className={currentPage === "suppliers" ? "active" : ""}
-          onClick={() => setCurrentPage("suppliers")}
-        >
-          Suppliers
-        </button>
-
-        <button onClick={() => setCurrentPage("customers")}>
-          Customer Management
-        </button>
-
-        <button onClick={() => setCurrentPage("reports")}>
-          Reports
-        </button>
-
-        <button onClick={() => setCurrentPage("settings")}>
-          Settings
-        </button>
-
-        <button onClick={() => setIsLoggedIn(false)}>
           Logout
         </button>
       </div>
@@ -123,4 +97,3 @@ function App() {
 }
 
 export default App;
-```

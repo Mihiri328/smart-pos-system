@@ -123,12 +123,13 @@ function Settings() {
     <div className="sys-app">
       <aside className="sys-sidebar">
         <div className="sys-brand">
-          <div className="sys-brand-cart">🛒</div>
-          <div>
-            <h2>Smart POS</h2>
-            <span>AI powered System</span>
-          </div>
+          <img
+            src="/src/img/Dark%20logo.jpeg"
+            alt="Smart POS Logo"
+            className="sys-brand-logo"
+          />
         </div>
+
 
         <nav className="sys-menu">
           {menuItems.map((item) => (
@@ -261,27 +262,7 @@ function Settings() {
                 </div>
               </section>
 
-              <section className="sys-card sys-logo-card">
-                <h2>Store Logo</h2>
-                <label className="sys-logo-preview" htmlFor="store-logo">
-                  {logo ? (
-                    <img src={logo} alt="Store logo preview" />
-                  ) : (
-                    <span className="sys-logo-placeholder" />
-                  )}
-                </label>
-                <p>JPEG, PNG, SVG, Max 2MB</p>
-                <label className="sys-replace-logo" htmlFor="store-logo">
-                  Replace Logo
-                </label>
-                <input
-                  id="store-logo"
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml"
-                  onChange={handleLogo}
-                  hidden
-                />
-              </section>
+            
             </div>
           )}
 

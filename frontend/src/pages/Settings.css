@@ -253,9 +253,10 @@
 
 .sys-store-layout {
   display: grid;
-  grid-template-columns: minmax(0, 2.35fr) minmax(220px, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 13px;
+  width: 100%;
 }
 
 .sys-card {
@@ -266,6 +267,8 @@
 }
 
 .sys-business-card {
+  width: 100%;
+  max-width: none;
   padding: 24px 22px 30px;
 }
 
@@ -708,4 +711,18 @@
     flex: 1;
     padding-inline: 8px;
   }
+}
+
+.sys-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 12px;
+}
+
+.sys-brand-logo {
+  width: 100%;
+  max-width: 400px;
+  height: 150px;
+  object-fit: contain;
 }

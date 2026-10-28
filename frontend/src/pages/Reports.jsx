@@ -157,12 +157,13 @@ function Reports() {
     <div className="reports-app">
       <aside className="reports-sidebar">
         <div className="reports-brand">
-          <div className="reports-brand-icon">🛒</div>
-          <div>
-            <h2>Smart POS</h2>
-            <span>FoodCity Smart POS System</span>
-          </div>
+          <img
+            src="/src/img/Dark%20logo.jpeg"
+            alt="Smart POS Logo"
+            className="reports-brand-logo"
+          />
         </div>
+
 
         <nav className="reports-menu">
           {menuItems.map((item) => (

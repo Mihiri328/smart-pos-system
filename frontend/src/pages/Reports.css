@@ -711,3 +711,17 @@
     grid-template-columns: 2fr 1fr;
   }
 }
+
+.reports-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 12px;
+}
+
+.reports-brand-logo {
+  width: 100%;
+  max-width: 400px;
+  height: 150px;
+  object-fit: contain;
+}

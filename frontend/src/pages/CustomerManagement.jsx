@@ -251,12 +251,13 @@ export default function CustomerManagement() {
     <div className="customer-app">
       <aside className="customer-sidebar">
         <div className="customer-brand">
-          <div className="customer-brand-symbol">🛒</div>
-          <div>
-            <h2>Smart POS</h2>
-            <span>FoodCity Smart POS System</span>
-          </div>
+          <img
+            src="/src/img/Dark%20logo.jpeg"
+            alt="Smart POS Food City Logo"
+            className="customer-brand-logo"
+          />
         </div>
+
 
         <nav className="customer-side-menu">
           {menuItems.map(([icon, label]) => (

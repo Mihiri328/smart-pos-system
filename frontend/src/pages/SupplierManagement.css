@@ -24,18 +24,23 @@
 }
 
 .brand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin: 8px 0 49px;
+  width: 76px;
+  height: 80px;
+  display: grid;
+  place-items: center;
+  color: #ff9c27;
+  font-size: 49px;
+  margin-top: -10px;
 }
 
-.brand-symbol {
-  color: #ff9e2f;
-  font-size: 48px;
-  line-height: 1;
+.brand-logo {
+  width: 200px;
+  height: 180px;
+  object-fit: contain;
+  display: block;
+  transform: translate(20px, 5px);
 }
+
 
 .brand h2 {
   margin: 0;

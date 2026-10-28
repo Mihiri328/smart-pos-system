@@ -1,5 +1,6 @@
 
 import React, { useMemo, useState } from "react";
+import logo from "../img/Dark logo.jpeg";
 
 const initialProducts = [
   { id: 1, name: "Samba Rice (1kg)", sku: "PRD001", category: "Grains & Rice", unit: "Pack", price: 220, stock: 50, status: "In Stock" },
@@ -52,7 +53,7 @@ const money = (value) =>
     maximumFractionDigits: 2,
   });
 
-export default function ProductManagement() {
+export default function ProductManagement({ onNavigate }) {
   const [products, setProducts] = useState(initialProducts);
   const [categories, setCategories] = useState(initialCategories);
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -318,12 +319,9 @@ export default function ProductManagement() {
       <aside className="pm-sidebar">
         <div className="pm-brand">
           <div className="pm-brand-icon">
-            <span>🛒</span>
-          </div>
-          <div>
-            <h2>Smart POS</h2>
-            <p>AI Powered System</p>
-          </div>
+  <img src={logo} alt="Smart POS Logo" />
+</div>
+          
         </div>
 
         <nav className="pm-navigation">
@@ -332,13 +330,27 @@ export default function ProductManagement() {
               type="button"
               key={item.label}
               className={`pm-nav-item ${
-                item.label === "Products Management" ? "active" : ""
-              }`}
-              onClick={() => {
-                if (item.label !== "Products Management") {
-                  setNotice(`${item.label} page is not connected yet.`);
-                }
-              }}
+  ({
+    products: "Products Management",
+    inventory: "Inventory",
+    suppliers: "Suppliers Management",
+  }[currentPage] === item.label) ? "active" : ""
+}`}
+              
+onClick={() => {
+  const pageMap = {
+    "Products Management": "products",
+    Inventory: "inventory",
+    "Suppliers Management": "suppliers",
+  };
+
+  if (pageMap[item.label] && onNavigate) {
+    onNavigate(pageMap[item.label]);
+  } else {
+    setNotice(`${item.label} page is not connected yet.`);
+  }
+}}
+
             >
               <span className="pm-nav-icon">{item.icon}</span>
               <span>{item.label}</span>
@@ -944,16 +956,22 @@ const styles = `
 
 .pm-brand-icon {
   width: 76px;
-  height: 65px;
+  height: 50px;
   display: grid;
   place-items: center;
   color: #ff9c27;
   font-size: 49px;
+  margin-top: -10px;
 }
 
-.pm-brand-icon span {
-  filter: saturate(1.1);
+.pm-brand-icon img {
+  width: 180px;
+  height: 170px;
+  object-fit: contain;
+  display: block;
+  transform: translate(20px, -50px);
 }
+
 
 .pm-brand h2 {
   font-size: 28px;

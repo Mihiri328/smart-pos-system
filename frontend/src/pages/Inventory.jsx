@@ -1,5 +1,6 @@
 
 import React, { useMemo, useState } from "react";
+import logo from "../img/Dark logo.jpeg";
 
 const initialItems = [
   { id: "01", name: "Samba Rice (1kg)", category: "Grocery", sku: "SK000001", cost: 180, price: 220, stock: 75, status: "Active" },
@@ -167,7 +168,7 @@ function TrendChart() {
   );
 }
 
-export default function Inventory() {
+export default function Inventory({ onNavigate, currentPage }) {
   const [items, setItems] = useState(initialItems);
   const [search, setSearch] = useState("");
   const [globalSearch, setGlobalSearch] = useState("");
@@ -231,10 +232,10 @@ export default function Inventory() {
   }, [items, search, globalSearch, filter, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
+  const currentPageNumber = Math.min(page, totalPages);
   const visibleItems = filteredItems.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    (currentPageNumber - 1) * pageSize,
+    currentPageNumber * pageSize
   );
 
   const lowStockCount = items.filter((item) => {
@@ -478,30 +479,45 @@ export default function Inventory() {
 
       <aside className="inv-sidebar">
         <div className="inv-brand">
-          <span className="inv-brand-cart">🛒</span>
-          <div>
-            <h2>Smart POS</h2>
-            <p>AI Powered System</p>
-          </div>
+          <img src={logo} alt="Smart POS Logo" className="inv-brand-logo" />
+          
         </div>
 
         <nav className="inv-nav">
-          {navItems.map(([icon, label]) => (
-            <button
-              type="button"
-              key={label}
-              className={`inv-nav-item ${label === "Inventory" ? "active" : ""}`}
-              onClick={() => {
-                if (label !== "Inventory") {
-                  setNotice(`${label} page is not connected yet.`);
-                }
-              }}
-            >
-              <span className="inv-nav-icon">{icon}</span>
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
+  {navItems.map(([icon, label]) => {
+    const pageMap = {
+      "Products Management": "products",
+      Inventory: "inventory",
+      "Suppliers Management": "suppliers",
+    };
+
+    const activeLabel = {
+      products: "Products Management",
+      inventory: "Inventory",
+      suppliers: "Suppliers Management",
+    }[currentPage];
+
+    return (
+      <button
+        type="button"
+        key={label}
+        className={`inv-nav-item ${
+          label === activeLabel ? "active" : ""
+        }`}
+        onClick={() => {
+          if (pageMap[label] && onNavigate) {
+            onNavigate(pageMap[label]);
+          } else {
+            setNotice(`${label} page is not connected yet.`);
+          }
+        }}
+      >
+        <span className="inv-nav-icon">{icon}</span>
+        <span>{label}</span>
+      </button>
+    );
+  })}
+</nav>
       </aside>
 
       <main className="inv-main">
@@ -1068,17 +1084,23 @@ const inventoryStyles = `
 }
 
 .inv-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 12px;
-  margin-bottom: 51px;
+  width: 76px;
+  height: 80px;
+  display: grid;
+  place-items: center;
+  color: #ff9c27;
+  font-size: 49px;
+  margin-top: -10px;
 }
 
-.inv-brand-cart {
-  width: 76px;
-  font-size: 48px;
+.inv-brand-logo {
+  width: 180px;
+  height: 170px;
+  object-fit: contain;
+  display: block;
+  transform: translate(20px, -50px);
 }
+
 
 .inv-brand h2 {
   font-size: 28px;

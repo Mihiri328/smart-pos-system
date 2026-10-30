@@ -113,7 +113,11 @@ const loyaltyInfo = {
 };
 
 
-export default function CustomerManagement() {
+export default function CustomerManagement({
+  currentPage,
+  onNavigate,
+  onLogout,
+}) {
   const [customers, setCustomers] = useState(initialCustomers);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
@@ -268,12 +272,25 @@ export default function CustomerManagement() {
                 label === "Customer Management" ? "selected" : ""
               }`}
               onClick={() => {
-                if (label !== "Customer Management") {
-                  showNotice(
-                    `${label} navigation is managed by the respective page.`
-                  );
-                }
-              }}
+                const pageRoutes = {
+                  Dashboard: "dashboard",
+                  "POS Billing": "billing",
+                  "Products Management": "products",
+                  Inventory: "inventory",
+                  "Suppliers Management": "suppliers",
+                  "Purchase Orders": "Purchase Orders",
+                  "Customer Management": "customers",
+                  "Sales History": "sales_history",
+                  Reports: "reports",
+                  Settings: "settings",
+                };
+
+              if (label === "Logout") {
+                onLogout?.();
+                } else {
+                onNavigate?.(pageRoutes[label]);
+               }
+            }}
             >
               <span className="customer-side-icon">{icon}</span>
               <span>{label}</span>

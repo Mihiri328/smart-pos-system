@@ -34,7 +34,7 @@ const initialForm = {
   lowStockAlerts: true,
 };
 
-function Settings() {
+function Settings({ currentPage, onNavigate, onLogout }) {
   const [activeMenu, setActiveMenu] = useState("Settings");
   const [activeTab, setActiveTab] = useState("Store Info");
   const [form, setForm] = useState(initialForm);
@@ -140,15 +140,25 @@ function Settings() {
                 activeMenu === item.label ? "selected" : ""
               }`}
               onClick={() => {
-                setActiveMenu(item.label);
-                if (item.label !== "Settings") {
-                  setMessage(
-                    `${item.label} page navigation must be connected through App.jsx.`
-                  );
-                } else {
-                  setMessage("");
-                }
-              }}
+                const pageRoutes = {
+                Dashboard: "dashboard",
+                "POS Billing": "billing",
+                "Products Management": "products",
+                Inventory: "inventory",
+                "Suppliers Management": "suppliers",
+                "Purchase Orders": "Purchase Orders",
+                "Customer Management": "customers",
+                "Sales History": "sales_history",
+                Reports: "reports",
+                Settings: "settings",
+                };
+
+             if (item.label === "Logout") {
+              onLogout?.();
+            } else {
+               onNavigate?.(pageRoutes[item.label]);
+             }
+          }}
             >
               <span className="sys-menu-icon">{item.icon}</span>
               <span>{item.label}</span>

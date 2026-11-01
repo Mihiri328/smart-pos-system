@@ -49,8 +49,7 @@ function publicUser(user) {
 function isValidPassword(password) {
   return (
     typeof password === "string" &&
-    password.length >= 12 &&
-    password.length <= 72 &&
+    password.length >= 6 &&
     /[a-z]/.test(password) &&
     /[A-Z]/.test(password) &&
     /[0-9]/.test(password)

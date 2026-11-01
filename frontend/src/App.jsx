@@ -1,4 +1,3 @@
-```jsx
 import { useState } from "react";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
@@ -105,4 +104,3 @@ function App() {
 }
 
 export default App;
-```

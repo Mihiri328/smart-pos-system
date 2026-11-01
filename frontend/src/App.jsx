@@ -1,6 +1,5 @@
 ```jsx
 import { useState } from "react";
-
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Billing from "./pages/Billing";
@@ -20,8 +19,8 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentPage, setCurrentPage] = useState("dashboard");
 
-  const pathname =
-    window.location.pathname.replace(/\/+$/, "") || "/";
+  // Get the current URL path
+  const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
 
   if (pathname === "/reset-password") {
     return <ResetPassword />;
@@ -47,6 +46,7 @@ function App() {
     },
   };
 
+  // Application pages
   const pages = {
     dashboard: <Dashboard {...pageProps} />,
     billing: <Billing {...pageProps} />,
@@ -60,6 +60,7 @@ function App() {
     "Purchase Orders": <PurchaseOrder {...pageProps} />,
   };
 
+  // Main navigation
   const navigation = [
     ["dashboard", "Dashboard"],
     ["billing", "Billing"],
@@ -74,9 +75,11 @@ function App() {
   ];
 
   return (
-    <div>
+    <div className="app-container">
+      {/* Display the selected page */}
       {pages[currentPage] || pages.dashboard}
 
+      {/* Main navigation */}
       <div className="page-navigation">
         {navigation.map(([page, label]) => (
           <button
@@ -89,6 +92,7 @@ function App() {
           </button>
         ))}
 
+        {/* Logout button */}
         <button
           type="button"
           onClick={pageProps.onLogout}

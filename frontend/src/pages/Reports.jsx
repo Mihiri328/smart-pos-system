@@ -101,7 +101,7 @@ function RevenueChart() {
   );
 }
 
-function Reports() {
+function Reports({ currentPage, onNavigate, onLogout }) {
   const [dateRange, setDateRange] = useState({
     from: "2026-10-01",
     to: "2026-10-31",
@@ -173,16 +173,27 @@ function Reports() {
               className={`reports-menu-item ${
                 activeMenu === item.label ? "selected" : ""
               }`}
+              
               onClick={() => {
-                setActiveMenu(item.label);
-                if (item.label !== "Reports") {
-                  setNotice(
-                    `${item.label} page navigation needs to be connected to the main application.`
-                  );
-                } else {
-                  setNotice("");
-                }
-              }}
+                const pageRoutes = {
+                Dashboard: "dashboard",
+                "POS Billing": "billing",
+                "Products Management": "products",
+                Inventory: "inventory",
+                "Suppliers Management": "suppliers",
+                "Purchase Orders": "Purchase Orders",
+                "Customer Management": "customers",
+                "Sales History": "sales_history",
+                Reports: "reports",
+                Settings: "settings",
+                };
+
+              if (item.label === "Logout") {
+                onLogout?.();
+              } else {
+                onNavigate?.(pageRoutes[item.label]);
+              }
+            }}
             >
               <span className="reports-menu-icon">{item.icon}</span>
               <span>{item.label}</span>

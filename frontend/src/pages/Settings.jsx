@@ -1,19 +1,26 @@
+import { useRef, useState } from "react";
+import {
+  LayoutDashboard, ShoppingCart, Package, Warehouse, Truck,
+  ClipboardList, Users, History, ChartNoAxesCombined,
+  Settings as SettingsIcon, LogOut, Search, Bell, Menu, X,
+  Store, Receipt, ShieldCheck, UserCog, Save, RotateCcw,
+  Upload
+} from "lucide-react";
 
-import { useState } from "react";
-import "./Settings.css";
+import logo from "../img/black logo.png";
+import "../style.css";
 
-const menuItems = [
-  { icon: "▤", label: "Dashboard" },
-  { icon: "🛒", label: "POS Billing" },
-  { icon: "▣", label: "Products Management" },
-  { icon: "⌂", label: "Inventory" },
-  { icon: "♟", label: "Suppliers Management" },
-  { icon: "▤", label: "Purchase Orders" },
-  { icon: "♟", label: "Customer Management" },
-  { icon: "▥", label: "Sales History" },
-  { icon: "◕", label: "Reports" },
-  { icon: "⚙", label: "Settings" },
-  { icon: "⇥", label: "Logout" },
+const navigation = [
+  { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
+  { label: "POS Billing", icon: ShoppingCart, page: "billing" },
+  { label: "Products Management", icon: Package, page: "products" },
+  { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
+  { label: "Suppliers Management", icon: Truck, page: "suppliers" },
+  { label: "Purchase Orders", icon: ClipboardList, page: "Purchase Orders" },
+  { label: "Customer Management", icon: Users, page: "customers" },
+  { label: "Sales History", icon: History, page: "sales_history" },
+  { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
+  { label: "Settings", icon: SettingsIcon, page: "settings" },
 ];
 
 const initialForm = {
@@ -34,16 +41,24 @@ const initialForm = {
   lowStockAlerts: true,
 };
 
-function Settings({ currentPage, onNavigate, onLogout }) {
-  const [activeMenu, setActiveMenu] = useState("Settings");
+const tabs = [
+  { label: "Store Info", icon: Store },
+  { label: "Tax & Billing", icon: Receipt },
+  { label: "Users & Permissions", icon: UserCog },
+  { label: "Backup & Security", icon: ShieldCheck },
+];
+
+function Settings({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState("Store Info");
   const [form, setForm] = useState(initialForm);
-  const [logo, setLogo] = useState("");
-  const [message, setMessage] = useState("");
   const [savedForm, setSavedForm] = useState(initialForm);
+  const [message, setMessage] = useState("");
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [storeLogo, setStoreLogo] = useState(logo);
+  const logoInput = useRef(null);
 
   const update = (key, value) => {
-    setForm((previous) => ({ ...previous, [key]: value }));
+    setForm((prev) => ({ ...prev, [key]: value }));
     setMessage("");
   };
 
@@ -58,12 +73,18 @@ function Settings({ currentPage, onNavigate, onLogout }) {
     setMessage("Unsaved changes have been reset.");
   };
 
-  const tabs = [
-    { label: "Store Info", icon: "▣" },
-    { label: "Tax & Billing", icon: "▤" },
-    { label: "Users & Permissions", icon: "♙" },
-    { label: "Backup & Security", icon: "⚙" },
-  ];
+  const handleLogo = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setMessage("Please select an image file.");
+      return;
+    }
+
+    setStoreLogo(URL.createObjectURL(file));
+    setMessage("Logo preview updated. Save your changes to keep it for this session.");
+  };
 
   const field = (label, key, placeholder, type = "text") => (
     <label className="sys-field" key={key}>
@@ -95,335 +116,363 @@ function Settings({ currentPage, onNavigate, onLogout }) {
     </div>
   );
 
-  const handleLogo = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!["image/jpeg", "image/png", "image/svg+xml"].includes(file.type)) {
-      setMessage("Please select a JPEG, PNG, or SVG image.");
-      event.target.value = "";
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      setMessage("Logo must be smaller than 2 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setLogo(String(reader.result));
-      setMessage("Logo preview updated. Save changes to keep the form state.");
-    };
-    reader.readAsDataURL(file);
-  };
-
   return (
-    <div className="sys-app">
-      <aside className="sys-sidebar">
-        <div className="sys-brand">
-          <img
-            src="/src/img/Dark%20logo.jpeg"
-            alt="Smart POS Logo"
-            className="sys-brand-logo"
-          />
-        </div>
+    <div className="sp-dashboard settings-app">
+      {mobileMenu && (
+        <button
+          className="sp-backdrop"
+          aria-label="Close navigation"
+          onClick={() => setMobileMenu(false)}
+        />
+      )}
 
-
-        <nav className="sys-menu">
-          {menuItems.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              className={`sys-menu-item ${
-                activeMenu === item.label ? "selected" : ""
-              }`}
-              onClick={() => {
-                const pageRoutes = {
-                Dashboard: "dashboard",
-                "POS Billing": "billing",
-                "Products Management": "products",
-                Inventory: "inventory",
-                "Suppliers Management": "suppliers",
-                "Purchase Orders": "Purchase Orders",
-                "Customer Management": "customers",
-                "Sales History": "sales_history",
-                Reports: "reports",
-                Settings: "settings",
-                };
-
-             if (item.label === "Logout") {
-              onLogout?.();
-            } else {
-               onNavigate?.(pageRoutes[item.label]);
-             }
-          }}
-            >
-              <span className="sys-menu-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      <main className="sys-main">
-        <header className="sys-header">
-          <div className="sys-heading">
-            <h1>System Settings</h1>
-            <p>Configure your store details, tax rules and user access.</p>
-          </div>
-
-          <div className="sys-header-actions">
-            <label className="sys-search">
-              <input
-                placeholder="Search anything ..."
-                aria-label="Search settings"
-                onChange={(event) => {
-                  const value = event.target.value.toLowerCase();
-                  const matchingTab = tabs.find((tab) =>
-                    tab.label.toLowerCase().includes(value)
-                  );
-                  if (matchingTab && value) setActiveTab(matchingTab.label);
-                }}
-              />
-              <span>⌕</span>
-            </label>
-            <button
-              type="button"
-              className="sys-bell"
-              aria-label="Notifications"
-              onClick={() => setMessage("You have 4 notifications.")}
-            >
-              ♟<b>4</b>
-            </button>
-          </div>
-        </header>
-
-        <div className="sys-subheader">
-          <div className="sys-subheader-spacer" />
+      <aside className={`sp-sidebar ${mobileMenu ? "sp-sidebar-open" : ""}`}>
+        <div className="sp-brand">
+          <img src={logo} alt="Smart POS" className="brand-logo" />
           <button
-            type="button"
-            className="sys-save-all"
-            onClick={saveChanges}
+            className="sp-close-menu"
+            aria-label="Close menu"
+            onClick={() => setMobileMenu(false)}
           >
-            Save All Changes
+            <X size={20} />
           </button>
         </div>
 
-        {message && (
-          <div className="sys-message" role="status">
-            <span>{message}</span>
-            <button type="button" onClick={() => setMessage("")}>✕</button>
-          </div>
-        )}
+        <p className="sp-nav-label">MAIN MENU</p>
 
-        <nav className="sys-tabs" aria-label="Settings sections">
-          {tabs.map((tab) => (
-            <button
-              type="button"
-              key={tab.label}
-              className={`sys-tab ${
-                activeTab === tab.label ? "active" : ""
-              }`}
-              onClick={() => {
-                setActiveTab(tab.label);
-                setMessage("");
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <nav className="sp-nav">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.page}
+                className={`sp-nav-item ${
+                  item.page === "settings" ? "selected" : ""
+                }`}
+                onClick={() => {
+                  setMobileMenu(false);
+                  onNavigate?.(item.page);
+                }}
+              >
+                <Icon size={19} />
+                <span>{item.label}</span>
+                {item.count && (
+                  <span className="sp-nav-count">{item.count}</span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
-        <form className="sys-form" onSubmit={saveChanges}>
-          {activeTab === "Store Info" && (
-            <div className="sys-store-layout">
-              <section className="sys-card sys-business-card">
-                <h2>Business Details</h2>
+        <div className="sp-sidebar-bottom">
+          <button className="sp-nav-item" onClick={onLogout}>
+            <LogOut size={19} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
 
-                <div className="sys-form-grid">
-                  {field("Store Name", "storeName", "Enter name.....")}
-                  {field(
-                    "Registration Number",
-                    "registrationNumber",
-                    "PV-12345"
-                  )}
-                </div>
+      <main className="sp-main settings-main">
+        <header className="sp-topbar settings-topbar">
+          <div className="sp-page-heading">
+            <button
+              className="sp-mobile-menu"
+              aria-label="Open menu"
+              onClick={() => setMobileMenu(true)}
+            >
+              <Menu size={22} />
+            </button>
+            <div>
+              <h1>System Settings</h1>
+              <p>Configure your store details, tax rules and user access.</p>
+            </div>
+          </div>
 
-                <label className="sys-field sys-address-field">
-                  <span>Address</span>
-                  <textarea
-                    value={form.address}
-                    placeholder="No.45 galle......."
-                    onChange={(event) => update("address", event.target.value)}
-                    rows={4}
-                  />
-                </label>
+          <div className="sp-top-actions">
+            <label className="sp-search">
+              <Search size={17} />
+              <input placeholder="Search anything..." aria-label="Search settings" />
+            </label>
 
-                <div className="sys-form-grid sys-contact-grid">
-                  {field("Phone Number", "phone", "+94....................", "tel")}
-                  {field(
-                    "WhatsApp SUPPORT",
-                    "whatsapp",
-                    "+94 ....................",
-                    "tel"
-                  )}
-                </div>
-              </section>
+            <button
+              className="sp-icon-button"
+              aria-label="Notifications"
+              onClick={() => setMessage("You have 4 notifications.")}
+            >
+              <Bell size={20} />
+              <span className="settings-notification-count">4</span>
+            </button>
 
-            
+            <div className="sp-profile">
+              <div className="sp-avatar">O</div>
+              <div>
+                <strong>Owner</strong>
+                <span>Administrator</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="settings-content">
+          {message && (
+            <div className="sys-message" role="status">
+              <span>{message}</span>
+              <button type="button" onClick={() => setMessage("")}>
+                ✕
+              </button>
             </div>
           )}
 
-          {activeTab === "Tax & Billing" && (
-            <section className="sys-card sys-settings-card">
-              <div className="sys-section-heading">
-                <div>
-                  <h2>Tax & Billing</h2>
-                  <p>Configure currency, taxes and receipt details.</p>
-                </div>
-                <span className="sys-section-symbol">▤</span>
-              </div>
+          <div className="settings-page-heading">
+            <div>
+              <h2>Settings</h2>
+              <p>Manage your store preferences and system configuration.</p>
+            </div>
 
-              <div className="sys-form-grid">
-                <label className="sys-field">
-                  <span>Store Currency</span>
-                  <select
-                    value={form.currency}
-                    onChange={(event) => update("currency", event.target.value)}
-                  >
-                    <option value="LKR">LKR - Sri Lankan Rupee</option>
-                    <option value="USD">USD - US Dollar</option>
-                    <option value="INR">INR - Indian Rupee</option>
-                  </select>
-                </label>
-
-                {field("Tax Rate (%)", "taxRate", "18", "number")}
-              </div>
-
-              <div className="sys-toggle-list">
-                {toggle(
-                  "Enable Tax",
-                  "Apply the configured tax rate to billing.",
-                  "taxEnabled"
-                )}
-              </div>
-
-              <label className="sys-field sys-receipt-field">
-                <span>Receipt Footer Message</span>
-                <textarea
-                  rows={3}
-                  value={form.receiptFooter}
-                  onChange={(event) =>
-                    update("receiptFooter", event.target.value)
-                  }
-                />
-              </label>
-            </section>
-          )}
-
-          {activeTab === "Users & Permissions" && (
-            <section className="sys-card sys-settings-card">
-              <div className="sys-section-heading">
-                <div>
-                  <h2>Users & Permissions</h2>
-                  <p>Configure the displayed administrator preferences.</p>
-                </div>
-                <span className="sys-section-symbol">♙</span>
-              </div>
-
-              <div className="sys-form-grid">
-                {field("Username", "username", "Enter username")}
-                <label className="sys-field">
-                  <span>Role</span>
-                  <select
-                    value={form.role}
-                    onChange={(event) => update("role", event.target.value)}
-                  >
-                    <option>Administrator</option>
-                    <option>Manager</option>
-                    <option>Cashier</option>
-                    <option>Inventory Staff</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="sys-permission-note">
-                <strong>Account permissions</strong>
-                <p>
-                  Role changes here are a visual prototype. Actual permissions
-                  must be enforced by your backend before use.
-                </p>
-              </div>
-            </section>
-          )}
-
-          {activeTab === "Backup & Security" && (
-            <section className="sys-card sys-settings-card">
-              <div className="sys-section-heading">
-                <div>
-                  <h2>Backup & Security</h2>
-                  <p>Review backup preferences and account security options.</p>
-                </div>
-                <span className="sys-section-symbol">⚙</span>
-              </div>
-
-              <div className="sys-toggle-list">
-                {toggle(
-                  "Automatic Backup",
-                  "Enable the preference for scheduled backups.",
-                  "autoBackup"
-                )}
-                {toggle(
-                  "Two-Factor Authentication",
-                  "Enable the preference for an additional sign-in step.",
-                  "twoFactor"
-                )}
-                {toggle(
-                  "Low Stock Alerts",
-                  "Show alerts when products need restocking.",
-                  "lowStockAlerts"
-                )}
-              </div>
-
-              <div className="sys-form-grid sys-timeout-field">
-                <label className="sys-field">
-                  <span>Session Timeout (minutes)</span>
-                  <select
-                    value={form.sessionTimeout}
-                    onChange={(event) =>
-                      update("sessionTimeout", event.target.value)
-                    }
-                  >
-                    <option value="15">15 minutes</option>
-                    <option value="30">30 minutes</option>
-                    <option value="60">60 minutes</option>
-                    <option value="120">120 minutes</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="sys-permission-note">
-                Backup scheduling and security enforcement need backend
-                implementation. These controls currently change the UI only.
-              </div>
-            </section>
-          )}
-
-          <div className="sys-form-footer">
             <button
               type="button"
-              className="sys-reset-button"
-              onClick={resetChanges}
+              className="settings-save-all"
+              onClick={saveChanges}
             >
-              Reset Changes
-            </button>
-            <button type="submit" className="sys-save-button">
-              Save Changes
+              <Save size={17} /> Save All Changes
             </button>
           </div>
-        </form>
+
+          <nav className="sys-tabs" aria-label="Settings sections">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+
+              return (
+                <button
+                  type="button"
+                  key={tab.label}
+                  className={`sys-tab ${
+                    activeTab === tab.label ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    setActiveTab(tab.label);
+                    setMessage("");
+                  }}
+                >
+                  <Icon size={17} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          <form className="sys-form" onSubmit={saveChanges}>
+            {activeTab === "Store Info" && (
+              <div className="sys-store-layout">
+                <section className="sys-card sys-business-card">
+                  <h2>Business Details</h2>
+
+                  <div className="sys-form-grid">
+                    {field("Store Name", "storeName", "Enter store name")}
+                    {field("Registration Number", "registrationNumber", "PV-12345")}
+                  </div>
+
+                  <label className="sys-field sys-address-field">
+                    <span>Address</span>
+                    <textarea
+                      rows={4}
+                      value={form.address}
+                      placeholder="Enter store address"
+                      onChange={(event) => update("address", event.target.value)}
+                    />
+                  </label>
+
+                  <div className="sys-form-grid sys-contact-grid">
+                    {field("Phone Number", "phone", "+94...", "tel")}
+                    {field("WhatsApp Support", "whatsapp", "+94...", "tel")}
+                  </div>
+                </section>
+
+                <section className="sys-card sys-logo-card">
+                  <h2>Store Logo</h2>
+
+                  <button
+                    type="button"
+                    className="sys-logo-preview"
+                    onClick={() => logoInput.current?.click()}
+                    aria-label="Choose store logo"
+                  >
+                    <img src={storeLogo} alt="Store logo preview" />
+                  </button>
+
+                  <input
+                    ref={logoInput}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleLogo}
+                  />
+
+                  <p>Upload your store logo.</p>
+
+                  <button
+                    type="button"
+                    className="sys-replace-logo"
+                    onClick={() => logoInput.current?.click()}
+                  >
+                    <Upload size={15} /> Replace Logo
+                  </button>
+                </section>
+              </div>
+            )}
+
+            {activeTab === "Tax & Billing" && (
+              <section className="sys-card sys-settings-card">
+                <div className="sys-section-heading">
+                  <div>
+                    <h2>Tax & Billing</h2>
+                    <p>Configure currency, taxes and receipt details.</p>
+                  </div>
+                  <Receipt size={23} />
+                </div>
+
+                <div className="sys-form-grid">
+                  <label className="sys-field">
+                    <span>Store Currency</span>
+                    <select
+                      value={form.currency}
+                      onChange={(event) => update("currency", event.target.value)}
+                    >
+                      <option value="LKR">LKR - Sri Lankan Rupee</option>
+                      <option value="USD">USD - US Dollar</option>
+                      <option value="INR">INR - Indian Rupee</option>
+                    </select>
+                  </label>
+
+                  {field("Tax Rate (%)", "taxRate", "18", "number")}
+                </div>
+
+                <div className="sys-toggle-list">
+                  {toggle(
+                    "Enable Tax",
+                    "Apply the configured tax rate to billing.",
+                    "taxEnabled"
+                  )}
+                </div>
+
+                <label className="sys-field sys-receipt-field">
+                  <span>Receipt Footer Message</span>
+                  <textarea
+                    rows={3}
+                    value={form.receiptFooter}
+                    onChange={(event) =>
+                      update("receiptFooter", event.target.value)
+                    }
+                  />
+                </label>
+              </section>
+            )}
+
+            {activeTab === "Users & Permissions" && (
+              <section className="sys-card sys-settings-card">
+                <div className="sys-section-heading">
+                  <div>
+                    <h2>Users & Permissions</h2>
+                    <p>Configure administrator account preferences.</p>
+                  </div>
+                  <UserCog size={23} />
+                </div>
+
+                <div className="sys-form-grid">
+                  {field("Username", "username", "Enter username")}
+
+                  <label className="sys-field">
+                    <span>Role</span>
+                    <select
+                      value={form.role}
+                      onChange={(event) => update("role", event.target.value)}
+                    >
+                      <option>Administrator</option>
+                      <option>Manager</option>
+                      <option>Cashier</option>
+                      <option>Inventory Staff</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="sys-permission-note">
+                  <strong>Account permissions</strong>
+                  <p>
+                    Role changes here are a visual prototype. Actual permissions
+                    must be enforced by your backend before use.
+                  </p>
+                </div>
+              </section>
+            )}
+
+            {activeTab === "Backup & Security" && (
+              <section className="sys-card sys-settings-card">
+                <div className="sys-section-heading">
+                  <div>
+                    <h2>Backup & Security</h2>
+                    <p>Review backup preferences and account security options.</p>
+                  </div>
+                  <ShieldCheck size={23} />
+                </div>
+
+                <div className="sys-toggle-list">
+                  {toggle(
+                    "Automatic Backup",
+                    "Enable the preference for scheduled backups.",
+                    "autoBackup"
+                  )}
+                  {toggle(
+                    "Two-Factor Authentication",
+                    "Enable the preference for an additional sign-in step.",
+                    "twoFactor"
+                  )}
+                  {toggle(
+                    "Low Stock Alerts",
+                    "Show alerts when products need restocking.",
+                    "lowStockAlerts"
+                  )}
+                </div>
+
+                <div className="sys-form-grid sys-timeout-field">
+                  <label className="sys-field">
+                    <span>Session Timeout</span>
+                    <select
+                      value={form.sessionTimeout}
+                      onChange={(event) =>
+                        update("sessionTimeout", event.target.value)
+                      }
+                    >
+                      <option value="15">15 minutes</option>
+                      <option value="30">30 minutes</option>
+                      <option value="60">60 minutes</option>
+                      <option value="120">120 minutes</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="sys-permission-note">
+                  Backup scheduling and security enforcement need backend
+                  implementation. These controls currently change the UI only.
+                </div>
+              </section>
+            )}
+
+            <div className="sys-form-footer">
+              <button
+                type="button"
+                className="sys-reset-button"
+                onClick={resetChanges}
+              >
+                <RotateCcw size={16} /> Reset Changes
+              </button>
+
+              <button type="submit" className="sys-save-button">
+                <Save size={16} /> Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
       </main>
     </div>
   );

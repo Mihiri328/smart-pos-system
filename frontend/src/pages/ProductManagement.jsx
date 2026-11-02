@@ -351,8 +351,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
 
   return (
     <div className="sh-page pm-app">
-
-      {/* Shared Sales History Navigation */}
+      {/* Shared Navigation - Same active style as Sales History */}
       <aside
         className={`sp-sidebar ${
           mobileMenu ? "sp-sidebar-open" : ""
@@ -383,7 +382,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
               type="button"
               key={page}
               className={`sp-nav-item ${
-                page === "products" ? "active" : ""
+                page === "products" ? "selected" : ""
               }`}
               onClick={() => {
                 setMobileMenu(false);
@@ -393,12 +392,11 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                 if (onNavigate) {
                   onNavigate(page);
                 } else {
-                  setNotice(`${label} page is not connected yet.`);
+                  setNotice(`${page} page is not connected yet.`);
                 }
               }}
             >
               <Icon size={18} />
-
               <span>{label}</span>
 
               {count && (
@@ -448,7 +446,6 @@ export default function ProductManagement({ onNavigate, onLogout }) {
 
       {/* Product Management Content */}
       <main className="sp-main pm-main">
-
         <header className="pm-header">
           <button
             className="sp-mobile-menu pm-mobile-menu"
@@ -510,7 +507,6 @@ export default function ProductManagement({ onNavigate, onLogout }) {
         <section className="pm-stats">
           <div className="pm-stat-card">
             <div className="pm-stat-icon blue">▤</div>
-
             <div className="pm-stat-content">
               <strong>Today’s Sales</strong>
               <h2>236</h2>
@@ -522,7 +518,6 @@ export default function ProductManagement({ onNavigate, onLogout }) {
 
           <div className="pm-stat-card">
             <div className="pm-stat-icon green">✓</div>
-
             <div className="pm-stat-content">
               <strong>Action Products</strong>
               <h2>{products.length}</h2>
@@ -534,7 +529,6 @@ export default function ProductManagement({ onNavigate, onLogout }) {
 
           <div className="pm-stat-card">
             <div className="pm-stat-icon orange">▰</div>
-
             <div className="pm-stat-content">
               <strong>Low Stock Items</strong>
               <h2>{lowStockCount}</h2>
@@ -544,26 +538,31 @@ export default function ProductManagement({ onNavigate, onLogout }) {
 
           <div className="pm-stat-card pm-stat-out">
             <div className="pm-stat-icon red">▦</div>
-
             <div className="pm-stat-content">
               <strong>Out of Stock</strong>
               <h2>{outOfStockCount}</h2>
               <p className="red-text">Urgent restock</p>
             </div>
 
-            
+            <button
+              type="button"
+              className="pm-primary pm-add-top"
+              onClick={openAddModal}
+            >
+              + Add New Products
+            </button>
           </div>
         </section>
 
         {/* Product Workspace */}
         <section className="pm-workspace">
-
           {/* Categories */}
           <aside className="pm-category-panel">
             <div className="pm-category-header">
               <h3>Categories</h3>
 
               <button
+                type="button"
                 className="pm-square-btn"
                 title="Add category"
                 onClick={() => setShowCategories(!showCategories)}
@@ -583,7 +582,11 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                   }}
                 />
 
-                <button className="pm-primary" onClick={addCategory}>
+                <button
+                  type="button"
+                  className="pm-primary"
+                  onClick={addCategory}
+                >
                   Add
                 </button>
               </div>
@@ -591,6 +594,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
 
             <div className="pm-category-list">
               <button
+                type="button"
                 className={`pm-category-item ${
                   selectedCategory === "All Categories" ? "selected" : ""
                 }`}
@@ -605,6 +609,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
 
               {categories.map((category) => (
                 <button
+                  type="button"
                   key={category}
                   className={`pm-category-item ${
                     selectedCategory === category ? "selected" : ""
@@ -615,7 +620,6 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                   }}
                 >
                   <span>{category}</span>
-
                   <span>
                     {
                       products.filter(
@@ -629,6 +633,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
 
             <div className="pm-category-footer">
               <button
+                type="button"
                 className="pm-primary pm-manage-btn"
                 onClick={() => setShowCategories(!showCategories)}
               >
@@ -661,6 +666,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
   </button>
                 {selectedIds.length > 0 && (
                   <button
+                    type="button"
                     className="pm-outline-btn pm-danger-btn"
                     onClick={deleteSelected}
                   >
@@ -670,6 +676,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
 
                 <div className="pm-filter-wrap">
                   <button
+                    type="button"
                     className="pm-outline-btn"
                     onClick={() => setShowFilters(!showFilters)}
                   >
@@ -697,6 +704,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                       </select>
 
                       <button
+                        type="button"
                         className="pm-primary"
                         onClick={() => {
                           setStockFilter("All");
@@ -711,6 +719,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                 </div>
 
                 <button
+                  type="button"
                   className="pm-outline-btn"
                   onClick={exportProducts}
                 >
@@ -748,7 +757,6 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                         onChange={toggleAllVisible}
                       />
                     </th>
-
                     <th>Products</th>
                     <th>SKU</th>
                     <th>Category</th>
@@ -772,10 +780,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                         />
                       </td>
 
-                      <td className="pm-product-name">
-                        {product.name}
-                      </td>
-
+                      <td className="pm-product-name">{product.name}</td>
                       <td className="pm-small-cell">{product.sku}</td>
 
                       <td>
@@ -789,11 +794,9 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                       </td>
 
                       <td className="pm-small-cell">{product.unit}</td>
-
                       <td className="pm-small-cell pm-price">
                         {money(product.price)}
                       </td>
-
                       <td className="pm-small-cell">{product.stock}</td>
 
                       <td>
@@ -813,6 +816,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                       <td>
                         <div className="pm-row-actions">
                           <button
+                            type="button"
                             className="pm-action-btn edit"
                             title="Edit product"
                             aria-label={`Edit ${product.name}`}
@@ -822,6 +826,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                           </button>
 
                           <button
+                            type="button"
                             className="pm-action-btn delete"
                             title="Delete product"
                             aria-label={`Delete ${product.name}`}
@@ -831,6 +836,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                           </button>
 
                           <button
+                            type="button"
                             className="pm-action-btn more"
                             title="More options"
                             onClick={() => openEditModal(product)}
@@ -881,6 +887,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
 
               <div className="pm-pagination">
                 <button
+                  type="button"
                   disabled={currentPage === 1}
                   onClick={() => setPage((previous) => previous - 1)}
                 >
@@ -905,6 +912,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                         )}
 
                       <button
+                        type="button"
                         className={
                           currentPage === number ? "current" : ""
                         }
@@ -916,6 +924,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                   ))}
 
                 <button
+                  type="button"
                   disabled={currentPage === totalPages}
                   onClick={() => setPage((previous) => previous + 1)}
                 >
@@ -948,11 +957,11 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                 <h2 id="pm-modal-title">
                   {editingProduct ? "Edit Product" : "Add New Product"}
                 </h2>
-
                 <p>Enter the product details below.</p>
               </div>
 
               <button
+                type="button"
                 className="pm-modal-close"
                 onClick={() => setShowModal(false)}
                 aria-label="Close dialog"
@@ -1076,6 +1085,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
           <span>{notice}</span>
 
           <button
+            type="button"
             onClick={() => setNotice("")}
             aria-label="Dismiss message"
           >

@@ -1,13 +1,11 @@
 import { useMemo, useState } from "react";
 import logo from "../img/black logo.png";
-import "./Dashboard.css";
 import {
   ShoppingCart, LayoutDashboard, Package, Warehouse, Truck, ClipboardList,
   Users, History, ChartNoAxesCombined, Settings, LogOut, Search, Bell,
   CalendarDays, AlertTriangle, BrainCircuit, ArrowUpRight, ChevronDown,
   CircleDollarSign, CreditCard, Banknote, QrCode, Eye, Menu, X
 } from "lucide-react";
-import "./Dashboard.css";
 
 const salesByDay = [
   { day: "Mon", amount: 20 }, { day: "Tue", amount: 30 },
@@ -56,16 +54,15 @@ const initialOrders = [
 const money = (n) => `Rs. ${Number(n).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const shortDate = (value) => new Date(`${value}T00:00:00`).toLocaleDateString("en-GB");
 
-export default function Dashboard({ onNavigate }) {
+export default function Dashboard({ onNavigate, onLogout }) {
   const [period, setPeriod] = useState("Weekly");
   const [search, setSearch] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [salesFilter, setSalesFilter] = useState("All");
-  const [sales, setSales] = useState(initialSales);
+  const [sales] = useState(initialSales);
   const [orders, setOrders] = useState(initialOrders);
   const [notice, setNotice] = useState("");
-  const [activeNav, setActiveNav] = useState("Dashboard");
 
   const filteredSales = useMemo(() => sales.filter((sale) => {
     const matchesSearch = `${sale.id} ${sale.method} ${sale.date}`.toLowerCase().includes(search.toLowerCase());
@@ -74,46 +71,41 @@ export default function Dashboard({ onNavigate }) {
   }), [sales, search, salesFilter]);
 
   const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard },
-    { label: "POS Billing", icon: ShoppingCart },
-    { label: "Products Management", icon: Package },
-    { label: "Inventory", icon: Warehouse },
-    { label: "Suppliers Management", icon: Truck },
-    { label: "Purchase Orders", icon: ClipboardList },
-    { label: "Customer Management", icon: Users },
-    { label: "Sales History", icon: History },
-    { label: "Reports", icon: ChartNoAxesCombined },
-    { label: "Settings", icon: Settings }
+    { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
+    { label: "POS Billing", icon: ShoppingCart, page: "billing" },
+    { label: "Products Management", icon: Package, page: "products" },
+    { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
+    { label: "Suppliers Management", icon: Truck, page: "suppliers" },
+    { label: "Purchase Orders", icon: ClipboardList, page: "purchase-orders" },
+    { label: "Customer Management", icon: Users, page: "customers" },
+    { label: "Sales History", icon: History, page: "sales_history" },
+    { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
+    { label: "Settings", icon: Settings, page: "settings" }
   ];
 
-  function chooseNav(label) {
-  setActiveNav(label);
-  setMobileMenu(false);
-  setNotice("");
-
-  const pageMap = {
-    Dashboard: "dashboard",
-    "POS Billing": "billing",
-    "Products Management": "products",
-    Inventory: "inventory",
-    "Suppliers Management": "suppliers",
-  };
-
-  const page = pageMap[label];
-
-  if (page && onNavigate) {
-    onNavigate(page);
-    return;
+  function chooseNav(pageKey) {
+    setMobileMenu(false);
+    setNotice("");
+    if (pageKey === "dashboard") return;
+    if (onNavigate) {
+      onNavigate(pageKey);
+    } else {
+      setNotice(`${pageKey} page is not connected yet.`);
+    }
   }
 
-  setNotice(
-    `${label} page is not connected yet.`
-  );
-}
+  function handleLogout() {
+    setMobileMenu(false);
+    if (onLogout) {
+      onLogout();
+    } else if (onNavigate) {
+      onNavigate("login");
+    }
+  }
 
   function markOrderReceived(id) {
     setOrders((current) => current.map((order) => order.id === id ? { ...order, status: "Received" } : order));
-    setNotice(`${id} marked as received (demo only; not saved to MySQL).`);
+    setNotice(`${id} marked as received (demo only).`);
   }
 
   function exportSalesCsv() {
@@ -136,22 +128,36 @@ export default function Dashboard({ onNavigate }) {
     <div className="sp-dashboard">
       <aside className={`sp-sidebar ${mobileMenu ? "sp-sidebar-open" : ""}`}>
         <div className="sp-brand">
-          
-          <span className="brand-icon"> <img src={logo} alt="Smart POS Logo" className="brand-logo" width={220}/></span>
+          <img src={logo} alt="Smart POS Logo" className="brand-logo" />
           <button className="sp-close-menu" onClick={() => setMobileMenu(false)} aria-label="Close menu"><X size={20}/></button>
         </div>
+        
         <div className="sp-nav-label">MAIN MENU</div>
+        
         <nav className="sp-nav">
-          {navItems.map(({ label, icon: Icon }) => (
-            <button key={label} className={`sp-nav-item ${activeNav === label ? "selected" : ""}`} onClick={() => chooseNav(label)}>
-              <Icon size={18} /><span>{label}</span>
-              {label === "Inventory" && <span className="sp-nav-count">5</span>}
+          {navItems.map(({ label, icon: Icon, page, count }) => (
+            <button 
+              key={page} 
+              className={`sp-nav-item ${page === "dashboard" ? "selected" : ""}`} 
+              onClick={() => chooseNav(page)}
+            >
+              <Icon size={18} />
+              <span>{label}</span>
+              {count && <span className="sp-nav-count">{count}</span>}
             </button>
           ))}
         </nav>
+
         <div className="sp-sidebar-bottom">
-          <div className="sp-help-card"><strong>Need help?</strong><p>Check your stock and sales insights to make better decisions.</p></div>
-          <button className="sp-nav-item" onClick={() => { setNotice("Log out using your app's existing Logout button below the dashboard."); }}><LogOut size={18}/><span>Logout</span></button>
+          <div className="sp-help-card">
+            <strong>Need help?</strong>
+            <p>Check your stock and sales insights to make better decisions.</p>
+          </div>
+
+          <button className="sp-nav-item" onClick={handleLogout}>
+            <LogOut size={18}/>
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
 
@@ -160,7 +166,11 @@ export default function Dashboard({ onNavigate }) {
       <main className="sp-main">
         <header className="sp-topbar">
           <button className="sp-mobile-menu" onClick={() => setMobileMenu(true)} aria-label="Open menu"><Menu size={21}/></button>
-          <div className="sp-page-heading"><span>OVERVIEW</span><h1>Welcome back, Owner!</h1><p><CalendarDays size={14}/> Tuesday, 27 October 2026 <span className="sp-dot">•</span> Store Owner Dashboard</p></div>
+          <div className="sp-page-heading">
+            <span>OVERVIEW</span>
+            <h1>Welcome back, Owner!</h1>
+            <p><CalendarDays size={14}/> Tuesday, 27 October 2026 <span className="sp-dot">•</span> Store Owner Dashboard</p>
+          </div>
           <div className="sp-top-actions">
             <label className="sp-search"><Search size={17}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search sales / order ID..." /></label>
             <div className="sp-notification-wrap">
@@ -202,7 +212,7 @@ export default function Dashboard({ onNavigate }) {
             <div className="sp-compact-list">
               {initialLowStock.map((item) => <div className="sp-stock-row" key={item.name}><div className="sp-product-dot">{item.name.slice(0,1)}</div><div className="sp-stock-name"><strong>{item.name}</strong><small>{item.stock} units left</small></div><span className={`sp-status ${item.level === "Critical" ? "critical" : "warning"}`}>{item.level}</span></div>)}
             </div>
-            <button className="sp-text-link" onClick={() => chooseNav("Inventory")}>View inventory <ArrowUpRight size={14}/></button>
+            <button className="sp-text-link" onClick={() => chooseNav("inventory")}>View inventory <ArrowUpRight size={14}/></button>
           </article>
 
           <article className="sp-panel sp-expiry-panel">
@@ -218,10 +228,10 @@ export default function Dashboard({ onNavigate }) {
 
         <section className="sp-secondary-grid">
           <article className="sp-panel sp-ai-panel">
-            <div className="sp-panel-head"><div className="sp-heading-with-icon"><span className="sp-ai-icon"><BrainCircuit size={19}/></span><div><h2>AI Stock Recommendation</h2><p>Suggested orders based on predicted demand</p></div></div><button className="sp-outline-button" onClick={() => setNotice("These are sample recommendations. A real recommendation requires historical sales and inventory data.")}>How it works</button></div>
+            <div className="sp-panel-head"><div className="sp-heading-with-icon"><span className="sp-ai-icon"><BrainCircuit size={19}/></span><div><h2>AI Stock Recommendation</h2><p>Suggested orders based on predicted demand</p></div></div><button className="sp-outline-button" onClick={() => setNotice("These are sample recommendations.")}>How it works</button></div>
             <div className="sp-table-wrap">
               <table><thead><tr><th>Product</th><th>Current stock</th><th>Predicted demand</th><th>Recommended order</th><th>Action</th></tr></thead><tbody>
-                {initialRecommendations.map((p) => <tr key={p.name}><td className="sp-table-product">{p.name}</td><td className="sp-red-number">{p.stock}</td><td>{p.demand}</td><td className="sp-green-number">{p.order}</td><td><button className="sp-order-button" onClick={() => setNotice(`${p.name}: draft reorder for ${p.order} units. Connect this action to your Purchase Orders API.`)}>Order now</button></td></tr>)}
+                {initialRecommendations.map((p) => <tr key={p.name}><td className="sp-table-product">{p.name}</td><td className="sp-red-number">{p.stock}</td><td>{p.demand}</td><td className="sp-green-number">{p.order}</td><td><button className="sp-order-button" onClick={() => setNotice(`${p.name}: draft reorder for ${p.order} units.`)}>Order now</button></td></tr>)}
               </tbody></table>
             </div>
           </article>
@@ -243,14 +253,14 @@ export default function Dashboard({ onNavigate }) {
             <div className="sp-panel-head"><div><h2>Sales History</h2><p>Review your latest transactions</p></div><div className="sp-inline-actions"><select value={salesFilter} onChange={(e) => setSalesFilter(e.target.value)} aria-label="Filter payment method"><option>All</option><option>Cash</option><option>Card</option><option>QR Pay</option></select><button className="sp-outline-button" onClick={exportSalesCsv}>Export CSV</button></div></div>
             <div className="sp-table-wrap">
               <table><thead><tr><th>Date</th><th>Order ID</th><th>Amount</th><th>Payment</th><th>Items</th><th>Status</th><th>Details</th></tr></thead><tbody>
-                {filteredSales.map((s) => <tr key={s.id}><td>{shortDate(s.date)}</td><td className="sp-id">{s.id}</td><td className="sp-table-product">{money(s.amount)}</td><td>{s.method}</td><td>{s.items}</td><td><span className="sp-status received">{s.status}</span></td><td><button className="sp-view-button" onClick={() => setNotice(`${s.id}: ${s.items} items, paid by ${s.method}, total ${money(s.amount)}. Demo transaction.`)}><Eye size={13}/> View</button></td></tr>)}
+                {filteredSales.map((s) => <tr key={s.id}><td>{shortDate(s.date)}</td><td className="sp-id">{s.id}</td><td className="sp-table-product">{money(s.amount)}</td><td>{s.method}</td><td>{s.items}</td><td><span className="sp-status received">{s.status}</span></td><td><button className="sp-view-button" onClick={() => setNotice(`${s.id}: ${s.items} items, total ${money(s.amount)}.`)}><Eye size={13}/> View</button></td></tr>)}
                 {filteredSales.length === 0 && <tr><td colSpan="7" className="sp-empty">No sales match your search/filter.</td></tr>}
               </tbody></table>
             </div>
           </article>
 
           <article className="sp-panel sp-orders-panel">
-            <div className="sp-panel-head"><div><h2>Recent Purchase Orders</h2><p>Supplier order status</p></div><button className="sp-icon-button subtle" onClick={() => chooseNav("Purchase Orders")} aria-label="View purchase orders"><ArrowUpRight size={17}/></button></div>
+            <div className="sp-panel-head"><div><h2>Recent Purchase Orders</h2><p>Supplier order status</p></div><button className="sp-icon-button subtle" onClick={() => chooseNav("purchase-orders")} aria-label="View purchase orders"><ArrowUpRight size={17}/></button></div>
             <div className="sp-order-list">
               {orders.map((o) => <div className="sp-order-item" key={o.id}><div className="sp-order-icon"><ClipboardList size={18}/></div><div className="sp-order-info"><strong>{o.id}</strong><span>{o.supplier} · {o.items} products</span><small>{shortDate(o.date)}</small></div><div className="sp-order-right"><span className={`sp-status ${o.status === "Received" ? "received" : "warning"}`}>{o.status}</span>{o.status === "Pending" && <button onClick={() => markOrderReceived(o.id)}>Mark received</button>}</div></div>)}
             </div>

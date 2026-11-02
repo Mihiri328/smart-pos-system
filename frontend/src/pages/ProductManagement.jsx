@@ -1,6 +1,22 @@
 
 import React, { useMemo, useState } from "react";
-import logo from "../img/Dark logo.jpeg";
+import logo from "../img/black logo.png";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  Warehouse,
+  Truck,
+  ClipboardList,
+  Users,
+  History,
+  ChartNoAxesCombined,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  AlertCircle,
+} from "lucide-react";
 
 const initialProducts = [
   { id: 1, name: "Samba Rice (1kg)", sku: "PRD001", category: "Grains & Rice", unit: "Pack", price: 220, stock: 50, status: "In Stock" },
@@ -28,17 +44,16 @@ const initialCategories = [
 ];
 
 const navigation = [
-  { icon: "▦", label: "Dashboard" },
-  { icon: "🛒", label: "POS Billing" },
-  { icon: "▣", label: "Products Management" },
-  { icon: "⌂", label: "Inventory" },
-  { icon: "♟", label: "Suppliers Management" },
-  { icon: "▤", label: "Purchase Orders" },
-  { icon: "♟", label: "Customer Management" },
-  { icon: "▥", label: "Sales History" },
-  { icon: "◕", label: "Reports" },
-  { icon: "⚙", label: "Settings" },
-  { icon: "⇥", label: "Logout" },
+  { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
+  { label: "POS Billing", icon: ShoppingCart, page: "billing" },
+  { label: "Products Management", icon: Package, page: "products" },
+  { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
+  { label: "Suppliers Management", icon: Truck, page: "suppliers" },
+  { label: "Purchase Orders", icon: ClipboardList, page: "purchase-orders" },
+  { label: "Customer Management", icon: Users, page: "customers" },
+  { label: "Sales History", icon: History, page: "sales_history" },
+  { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
+  { label: "Settings", icon: Settings, page: "settings" },
 ];
 
 const getStatus = (stock) => {
@@ -53,7 +68,7 @@ const money = (value) =>
     maximumFractionDigits: 2,
   });
 
-export default function ProductManagement({ onNavigate }) {
+export default function ProductManagement({ onNavigate, onLogout }) {
   const [products, setProducts] = useState(initialProducts);
   const [categories, setCategories] = useState(initialCategories);
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -69,6 +84,9 @@ export default function ProductManagement({ onNavigate }) {
   const [newCategory, setNewCategory] = useState("");
   const [showCategories, setShowCategories] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
   const [form, setForm] = useState({
     name: "",
     sku: "",
@@ -104,9 +122,14 @@ export default function ProductManagement({ onNavigate }) {
     });
   }, [products, search, globalSearch, selectedCategory, stockFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredProducts.length / pageSize)
+  );
+
   const currentPage = Math.min(page, totalPages);
   const startIndex = (currentPage - 1) * pageSize;
+
   const visibleProducts = filteredProducts.slice(
     startIndex,
     startIndex + pageSize
@@ -122,6 +145,7 @@ export default function ProductManagement({ onNavigate }) {
 
   const openAddModal = () => {
     setEditingProduct(null);
+
     setForm({
       name: "",
       sku: "",
@@ -130,11 +154,13 @@ export default function ProductManagement({ onNavigate }) {
       price: "",
       stock: "",
     });
+
     setShowModal(true);
   };
 
   const openEditModal = (product) => {
     setEditingProduct(product);
+
     setForm({
       name: product.name,
       sku: product.sku,
@@ -143,6 +169,7 @@ export default function ProductManagement({ onNavigate }) {
       price: String(product.price),
       stock: String(product.stock),
     });
+
     setShowModal(true);
   };
 
@@ -169,6 +196,7 @@ export default function ProductManagement({ onNavigate }) {
     }
 
     const stock = Math.max(0, Number(form.stock));
+
     const productData = {
       ...form,
       name,
@@ -186,12 +214,14 @@ export default function ProductManagement({ onNavigate }) {
             : product
         )
       );
+
       setNotice("Product updated successfully.");
     } else {
       setProducts((previous) => [
         ...previous,
         { id: Date.now(), ...productData },
       ]);
+
       setNotice("New product added successfully.");
     }
 
@@ -204,9 +234,11 @@ export default function ProductManagement({ onNavigate }) {
     setProducts((previous) =>
       previous.filter((item) => item.id !== product.id)
     );
+
     setSelectedIds((previous) =>
       previous.filter((id) => id !== product.id)
     );
+
     setNotice("Product deleted successfully.");
   };
 
@@ -242,12 +274,16 @@ export default function ProductManagement({ onNavigate }) {
     const blob = new Blob(["\uFEFF" + csv], {
       type: "text/csv;charset=utf-8;",
     });
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
+
     link.href = url;
     link.download = "smart-pos-products.csv";
     link.click();
+
     URL.revokeObjectURL(url);
+
     setNotice("Products exported successfully.");
   };
 
@@ -308,67 +344,121 @@ export default function ProductManagement({ onNavigate }) {
     setProducts((previous) =>
       previous.filter((product) => !selectedIds.includes(product.id))
     );
+
     setSelectedIds([]);
     setNotice("Selected products deleted.");
   };
 
   return (
-    <div className="pm-app">
-      <style>{styles}</style>
+    <div className="sh-page pm-app">
 
-      <aside className="pm-sidebar">
-        <div className="pm-brand">
-          <div className="pm-brand-icon">
-  <img src={logo} alt="Smart POS Logo" />
-</div>
-          
+      {/* Shared Sales History Navigation */}
+      <aside
+        className={`sp-sidebar ${
+          mobileMenu ? "sp-sidebar-open" : ""
+        }`}
+      >
+        <div className="sp-brand">
+          <img
+            src={logo}
+            alt="Smart POS Logo"
+            className="brand-logo"
+          />
+
+          <button
+            className="sp-close-menu"
+            type="button"
+            onClick={() => setMobileMenu(false)}
+            aria-label="Close menu"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        <nav className="pm-navigation">
-          {navigation.map((item) => (
+        <div className="sp-nav-label">MAIN MENU</div>
+
+        <nav className="sp-nav">
+          {navigation.map(({ label, icon: Icon, page, count }) => (
             <button
               type="button"
-              key={item.label}
-              className={`pm-nav-item ${
-  ({
-    products: "Products Management",
-    inventory: "Inventory",
-    suppliers: "Suppliers Management",
-  }[currentPage] === item.label) ? "active" : ""
-}`}
-              
-onClick={() => {
-  const pageMap = {
-    "Products Management": "products",
-    Inventory: "inventory",
-    "Suppliers Management": "suppliers",
-  };
+              key={page}
+              className={`sp-nav-item ${
+                page === "products" ? "active" : ""
+              }`}
+              onClick={() => {
+                setMobileMenu(false);
 
-  if (pageMap[item.label] && onNavigate) {
-    onNavigate(pageMap[item.label]);
-  } else {
-    setNotice(`${item.label} page is not connected yet.`);
-  }
-}}
+                if (page === "products") return;
 
+                if (onNavigate) {
+                  onNavigate(page);
+                } else {
+                  setNotice(`${label} page is not connected yet.`);
+                }
+              }}
             >
-              <span className="pm-nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
+              <Icon size={18} />
+
+              <span>{label}</span>
+
+              {count && (
+                <span className="sp-nav-count">{count}</span>
+              )}
             </button>
           ))}
         </nav>
 
-        <div className="pm-sidebar-footer">
-          <span className="pm-avatar">A</span>
-          <div>
-            <strong>Admin User</strong>
-            <small>Store Administrator</small>
+        <div className="sp-sidebar-bottom">
+          <div className="sp-help-card">
+            <strong>Need help?</strong>
+            <p>
+              Check your stock and sales insights to make better decisions.
+            </p>
           </div>
+
+          <button
+            type="button"
+            className="sp-nav-item"
+            onClick={() => {
+              setMobileMenu(false);
+
+              if (onLogout) {
+                onLogout();
+              } else if (onNavigate) {
+                onNavigate("login");
+              } else {
+                setNotice("Logout is not connected yet.");
+              }
+            }}
+          >
+            <LogOut size={18} />
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
 
-      <main className="pm-main">
+      {mobileMenu && (
+        <button
+          type="button"
+          className="sp-backdrop"
+          onClick={() => setMobileMenu(false)}
+          aria-label="Close navigation"
+        />
+      )}
+
+      {/* Product Management Content */}
+      <main className="sp-main pm-main">
+
         <header className="pm-header">
+          <button
+            className="sp-mobile-menu pm-mobile-menu"
+            type="button"
+            onClick={() => setMobileMenu(true)}
+            aria-label="Open navigation"
+          >
+            <Menu size={21} />
+          </button>
+
           <div className="pm-heading">
             <h1>Product Management</h1>
             <p>Add, Edit and manage your store products</p>
@@ -388,40 +478,63 @@ onClick={() => {
               <span>⌕</span>
             </label>
 
-            <button
-              type="button"
-              className="pm-notification"
-              title="Notifications"
-              onClick={() => setNotice("You have 4 notifications.")}
-            >
-              ♟<span>4</span>
-            </button>
+            <div className="pm-notification-wrap">
+              <button
+                type="button"
+                className="pm-notification"
+                title="Notifications"
+                aria-label="Notifications"
+                onClick={() =>
+                  setShowNotifications((current) => !current)
+                }
+              >
+                <AlertCircle size={19} />
+                <span>4</span>
+              </button>
+
+              {showNotifications && (
+                <div className="pm-notification-pop">
+                  <strong>Notifications</strong>
+                  <p>3 products have critical stock.</p>
+                  <p>5 products are expiring soon.</p>
+                  <p>2 purchase orders pending.</p>
+                </div>
+              )}
+            </div>
 
             <div className="pm-date">October 21, 2026</div>
           </div>
         </header>
 
+        {/* Statistics */}
         <section className="pm-stats">
           <div className="pm-stat-card">
             <div className="pm-stat-icon blue">▤</div>
+
             <div className="pm-stat-content">
               <strong>Today’s Sales</strong>
               <h2>236</h2>
-              <p><span className="green-text">12</span> New this month</p>
+              <p>
+                <span className="green-text">12</span> New this month
+              </p>
             </div>
           </div>
 
           <div className="pm-stat-card">
             <div className="pm-stat-icon green">✓</div>
+
             <div className="pm-stat-content">
               <strong>Action Products</strong>
               <h2>{products.length}</h2>
-              <p><span className="green-text">14%</span> of total</p>
+              <p>
+                <span className="green-text">14%</span> of total
+              </p>
             </div>
           </div>
 
           <div className="pm-stat-card">
             <div className="pm-stat-icon orange">▰</div>
+
             <div className="pm-stat-content">
               <strong>Low Stock Items</strong>
               <h2>{lowStockCount}</h2>
@@ -431,21 +544,30 @@ onClick={() => {
 
           <div className="pm-stat-card pm-stat-out">
             <div className="pm-stat-icon red">▦</div>
+
             <div className="pm-stat-content">
               <strong>Out of Stock</strong>
               <h2>{outOfStockCount}</h2>
               <p className="red-text">Urgent restock</p>
             </div>
-            <button className="pm-primary pm-add-top" onClick={openAddModal}>
+
+            <button
+              className="pm-primary pm-add-top"
+              onClick={openAddModal}
+            >
               + Add New Products
             </button>
           </div>
         </section>
 
+        {/* Product Workspace */}
         <section className="pm-workspace">
+
+          {/* Categories */}
           <aside className="pm-category-panel">
             <div className="pm-category-header">
               <h3>Categories</h3>
+
               <button
                 className="pm-square-btn"
                 title="Add category"
@@ -465,6 +587,7 @@ onClick={() => {
                     if (event.key === "Enter") addCategory();
                   }}
                 />
+
                 <button className="pm-primary" onClick={addCategory}>
                   Add
                 </button>
@@ -497,10 +620,13 @@ onClick={() => {
                   }}
                 >
                   <span>{category}</span>
+
                   <span>
-                    {products.filter(
-                      (product) => product.category === category
-                    ).length}
+                    {
+                      products.filter(
+                        (product) => product.category === category
+                      ).length
+                    }
                   </span>
                 </button>
               ))}
@@ -516,10 +642,12 @@ onClick={() => {
             </div>
           </aside>
 
+          {/* Products Table */}
           <section className="pm-products-panel">
             <div className="pm-table-toolbar">
               <div>
                 <h3>All Products</h3>
+
                 {selectedIds.length > 0 && (
                   <small className="pm-selection-info">
                     {selectedIds.length} selected
@@ -547,7 +675,10 @@ onClick={() => {
 
                   {showFilters && (
                     <div className="pm-filter-menu">
-                      <label htmlFor="pm-stock-filter">Stock status</label>
+                      <label htmlFor="pm-stock-filter">
+                        Stock status
+                      </label>
+
                       <select
                         id="pm-stock-filter"
                         value={stockFilter}
@@ -561,6 +692,7 @@ onClick={() => {
                         <option value="Low Stock">Low Stock</option>
                         <option value="Out of Stock">Out of Stock</option>
                       </select>
+
                       <button
                         className="pm-primary"
                         onClick={() => {
@@ -575,7 +707,10 @@ onClick={() => {
                   )}
                 </div>
 
-                <button className="pm-outline-btn" onClick={exportProducts}>
+                <button
+                  className="pm-outline-btn"
+                  onClick={exportProducts}
+                >
                   Export
                 </button>
 
@@ -610,6 +745,7 @@ onClick={() => {
                         onChange={toggleAllVisible}
                       />
                     </th>
+
                     <th>Products</th>
                     <th>SKU</th>
                     <th>Category</th>
@@ -632,22 +768,31 @@ onClick={() => {
                           onChange={() => toggleProduct(product.id)}
                         />
                       </td>
-                      <td className="pm-product-name">{product.name}</td>
+
+                      <td className="pm-product-name">
+                        {product.name}
+                      </td>
+
                       <td className="pm-small-cell">{product.sku}</td>
+
                       <td>
                         <span
-                          className={`pm-category-tag tag-${categories.indexOf(
-                            product.category
-                          ) % 6}`}
+                          className={`pm-category-tag tag-${
+                            categories.indexOf(product.category) % 6
+                          }`}
                         >
                           {product.category}
                         </span>
                       </td>
+
                       <td className="pm-small-cell">{product.unit}</td>
+
                       <td className="pm-small-cell pm-price">
                         {money(product.price)}
                       </td>
+
                       <td className="pm-small-cell">{product.stock}</td>
+
                       <td>
                         <span
                           className={`pm-status ${
@@ -661,6 +806,7 @@ onClick={() => {
                           {getStatus(product.stock)}
                         </span>
                       </td>
+
                       <td>
                         <div className="pm-row-actions">
                           <button
@@ -671,6 +817,7 @@ onClick={() => {
                           >
                             ✎
                           </button>
+
                           <button
                             className="pm-action-btn delete"
                             title="Delete product"
@@ -679,6 +826,7 @@ onClick={() => {
                           >
                             ▣
                           </button>
+
                           <button
                             className="pm-action-btn more"
                             title="More options"
@@ -702,12 +850,16 @@ onClick={() => {
               </table>
             </div>
 
+            {/* Pagination */}
             <footer className="pm-table-footer">
               <div className="pm-pagination-info">
                 Showing{" "}
                 {filteredProducts.length === 0 ? 0 : startIndex + 1} to{" "}
-                {Math.min(startIndex + pageSize, filteredProducts.length)} of{" "}
-                {filteredProducts.length} products
+                {Math.min(
+                  startIndex + pageSize,
+                  filteredProducts.length
+                )}{" "}
+                of {filteredProducts.length} products
 
                 <select
                   className="pm-page-size"
@@ -729,10 +881,13 @@ onClick={() => {
                   disabled={currentPage === 1}
                   onClick={() => setPage((previous) => previous - 1)}
                 >
-                  &lt;
+                  {"<"}
                 </button>
 
-                {Array.from({ length: totalPages }, (_, index) => index + 1)
+                {Array.from(
+                  { length: totalPages },
+                  (_, index) => index + 1
+                )
                   .filter(
                     (number) =>
                       number === 1 ||
@@ -741,11 +896,15 @@ onClick={() => {
                   )
                   .map((number, index, array) => (
                     <React.Fragment key={number}>
-                      {index > 0 && number - array[index - 1] > 1 && (
-                        <span className="pm-page-dots">…</span>
-                      )}
+                      {index > 0 &&
+                        number - array[index - 1] > 1 && (
+                          <span className="pm-page-dots">…</span>
+                        )}
+
                       <button
-                        className={currentPage === number ? "current" : ""}
+                        className={
+                          currentPage === number ? "current" : ""
+                        }
                         onClick={() => setPage(number)}
                       >
                         {number}
@@ -757,7 +916,7 @@ onClick={() => {
                   disabled={currentPage === totalPages}
                   onClick={() => setPage((previous) => previous + 1)}
                 >
-                  &gt;
+                  {">"}
                 </button>
               </div>
             </footer>
@@ -765,11 +924,14 @@ onClick={() => {
         </section>
       </main>
 
+      {/* Add / Edit Product Modal */}
       {showModal && (
         <div
           className="pm-modal-overlay"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setShowModal(false);
+            if (event.target === event.currentTarget) {
+              setShowModal(false);
+            }
           }}
         >
           <div
@@ -783,8 +945,10 @@ onClick={() => {
                 <h2 id="pm-modal-title">
                   {editingProduct ? "Edit Product" : "Add New Product"}
                 </h2>
+
                 <p>Enter the product details below.</p>
               </div>
+
               <button
                 className="pm-modal-close"
                 onClick={() => setShowModal(false)}
@@ -893,6 +1057,7 @@ onClick={() => {
                 >
                   Cancel
                 </button>
+
                 <button type="submit" className="pm-primary">
                   {editingProduct ? "Save Changes" : "Add Product"}
                 </button>
@@ -902,10 +1067,15 @@ onClick={() => {
         </div>
       )}
 
+      {/* Notification Message */}
       {notice && (
         <div className="pm-toast" role="status">
           <span>{notice}</span>
-          <button onClick={() => setNotice("")} aria-label="Dismiss message">
+
+          <button
+            onClick={() => setNotice("")}
+            aria-label="Dismiss message"
+          >
             ×
           </button>
         </div>
@@ -913,1098 +1083,3 @@ onClick={() => {
     </div>
   );
 }
-
-const styles = `
-* {
-  box-sizing: border-box;
-}
-
-.pm-app {
-  --pm-navy: #061d40;
-  --pm-blue: #2257b5;
-  --pm-bright-blue: #4965f6;
-  --pm-border: #d1d1d1;
-  --pm-text: #101010;
-  display: flex;
-  min-height: 100vh;
-  width: 100%;
-  background: #fff;
-  color: var(--pm-text);
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 14px;
-}
-
-.pm-sidebar {
-  background: var(--pm-navy);
-  color: #fff;
-  width: 322px;
-  min-width: 260px;
-  min-height: 100vh;
-  padding: 43px 24px 22px;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
-.pm-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 14px;
-  margin-bottom: 51px;
-}
-
-.pm-brand-icon {
-  width: 76px;
-  height: 50px;
-  display: grid;
-  place-items: center;
-  color: #ff9c27;
-  font-size: 49px;
-  margin-top: -10px;
-}
-
-.pm-brand-icon img {
-  width: 180px;
-  height: 170px;
-  object-fit: contain;
-  display: block;
-  transform: translate(20px, -50px);
-}
-
-
-.pm-brand h2 {
-  font-size: 28px;
-  letter-spacing: -.7px;
-  margin: 0 0 4px;
-  white-space: nowrap;
-}
-
-.pm-brand p {
-  color: #6285ff;
-  margin: 0;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.pm-navigation {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.pm-nav-item {
-  border: 0;
-  color: #fff;
-  background: transparent;
-  min-height: 49px;
-  border-radius: 11px;
-  display: flex;
-  align-items: center;
-  gap: 25px;
-  padding: 0 21px;
-  text-align: left;
-  font-family: inherit;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .18s;
-}
-
-.pm-nav-item:hover {
-  background: #142f5c;
-}
-
-.pm-nav-item.active {
-  background: var(--pm-bright-blue);
-}
-
-.pm-nav-icon {
-  font-size: 26px;
-  width: 37px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.pm-sidebar-footer {
-  margin-top: auto;
-  border-top: 1px solid #294163;
-  padding: 19px 5px 0;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-}
-
-.pm-avatar {
-  width: 39px;
-  height: 39px;
-  display: grid;
-  place-items: center;
-  background: #4965f6;
-  border-radius: 50%;
-  font-weight: 700;
-  font-size: 17px;
-}
-
-.pm-sidebar-footer strong,
-.pm-sidebar-footer small {
-  display: block;
-}
-
-.pm-sidebar-footer small {
-  margin-top: 5px;
-  color: #b9c8df;
-}
-
-.pm-main {
-  flex: 1;
-  min-width: 0;
-  padding: 43px 21px 24px;
-}
-
-.pm-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 22px;
-  margin-bottom: 42px;
-}
-
-.pm-heading h1 {
-  font-size: clamp(25px, 2.2vw, 34px);
-  letter-spacing: -.8px;
-  line-height: 1.15;
-  margin: 0 0 7px;
-}
-
-.pm-heading p {
-  margin: 0;
-  font-size: 15px;
-  color: #202020;
-}
-
-.pm-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 29px;
-}
-
-.pm-global-search,
-.pm-table-search {
-  height: 41px;
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--pm-border);
-  border-radius: 17px;
-  padding: 0 14px 0 25px;
-  background: #fff;
-}
-
-.pm-global-search {
-  width: 280px;
-}
-
-.pm-global-search input,
-.pm-table-search input {
-  border: 0;
-  outline: 0;
-  width: 100%;
-  min-width: 0;
-  font: inherit;
-  background: transparent;
-}
-
-.pm-global-search input::placeholder,
-.pm-table-search input::placeholder {
-  color: #929292;
-}
-
-.pm-global-search span,
-.pm-table-search span {
-  font-size: 31px;
-  line-height: 1;
-  transform: rotate(-20deg);
-  color: #000;
-}
-
-.pm-notification {
-  position: relative;
-  flex-shrink: 0;
-  width: 43px;
-  height: 43px;
-  border: 1px solid #ddd;
-  border-radius: 50%;
-  background: #fff;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.pm-notification span {
-  position: absolute;
-  right: -9px;
-  top: -7px;
-  border-radius: 50%;
-  background: #f04432;
-  color: #fff;
-  font-size: 13px;
-  display: grid;
-  place-items: center;
-  width: 25px;
-  height: 25px;
-}
-
-.pm-date {
-  border: 1px solid var(--pm-border);
-  border-radius: 16px;
-  height: 55px;
-  min-width: 210px;
-  padding: 0 20px;
-  display: grid;
-  place-items: center;
-  font-weight: 600;
-  font-size: 18px;
-  white-space: nowrap;
-}
-
-.pm-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 21px;
-  margin-bottom: 31px;
-}
-
-.pm-stat-card {
-  min-height: 101px;
-  border: 1px solid #ccc;
-  border-radius: 21px;
-  padding: 14px 11px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  min-width: 0;
-}
-
-.pm-stat-icon {
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
-  border: 4px solid rgba(255,255,255,.7);
-  outline: 1px solid #e5e5e5;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: 31px;
-  font-weight: 700;
-}
-
-.pm-stat-icon.blue { background: #4b9df5; }
-.pm-stat-icon.green { background: #0cbb35; }
-.pm-stat-icon.orange { background: #ff9e22; }
-.pm-stat-icon.red { background: #f71924; }
-
-.pm-stat-content {
-  min-width: 0;
-}
-
-.pm-stat-content strong {
-  display: block;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-.pm-stat-content h2 {
-  margin: 8px 0 6px;
-  font-size: 25px;
-  line-height: 1;
-}
-
-.pm-stat-content p {
-  font-size: 12px;
-  margin: 0;
-  white-space: nowrap;
-}
-
-.green-text { color: #00b532; }
-.orange-text { color: #ff941e; }
-.red-text { color: #ff3039; }
-
-.pm-stat-out {
-  gap: 12px;
-}
-
-.pm-stat-out .pm-stat-content {
-  flex: 1;
-}
-
-.pm-primary {
-  border: 1px solid var(--pm-blue);
-  border-radius: 11px;
-  background: var(--pm-blue);
-  color: #fff;
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 14px;
-  padding: 11px 17px;
-  cursor: pointer;
-  transition: background .15s;
-}
-
-.pm-primary:hover {
-  background: #17469b;
-}
-
-.pm-add-top {
-  white-space: nowrap;
-  padding: 9px 15px;
-  font-size: 13px;
-}
-
-.pm-workspace {
-  display: grid;
-  grid-template-columns: 256px minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
-}
-
-.pm-category-panel,
-.pm-products-panel {
-  border: 1px solid #777;
-  border-radius: 16px;
-  min-width: 0;
-  background: #fff;
-  overflow: visible;
-}
-
-.pm-category-panel {
-  display: flex;
-  flex-direction: column;
-}
-
-.pm-category-header {
-  margin: 0 2px;
-  min-height: 47px;
-  padding: 7px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #ddd;
-}
-
-.pm-category-header h3,
-.pm-table-toolbar h3 {
-  margin: 0;
-  font-size: 16px;
-}
-
-.pm-square-btn {
-  width: 31px;
-  height: 31px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  background: #fff;
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.pm-add-category {
-  padding: 10px;
-  display: flex;
-  gap: 5px;
-  border-bottom: 1px solid #ddd;
-}
-
-.pm-add-category input {
-  width: 100%;
-  min-width: 0;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 8px;
-}
-
-.pm-add-category .pm-primary {
-  padding: 7px 9px;
-}
-
-.pm-category-list {
-  padding: 8px 11px 15px;
-}
-
-.pm-category-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 42px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  padding: 0 13px;
-  font: inherit;
-  font-size: 14px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.pm-category-item span:first-child {
-  overflow-wrap: anywhere;
-}
-
-.pm-category-item:hover:not(.selected) {
-  background: #f0f3f9;
-}
-
-.pm-category-item.selected {
-  background: var(--pm-blue);
-  color: #fff;
-}
-
-.pm-category-item span:last-child {
-  flex-shrink: 0;
-}
-
-.pm-category-footer {
-  margin-top: auto;
-  padding: 21px 19px 15px;
-  border-top: 1px solid #ccc;
-}
-
-.pm-manage-btn {
-  width: 100%;
-  min-height: 45px;
-  font-size: 15px;
-}
-
-.pm-products-panel {
-  overflow: visible;
-}
-
-.pm-table-toolbar {
-  min-height: 78px;
-  padding: 13px 15px 13px 19px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 15px;
-  border-bottom: 1px solid #ccc;
-}
-
-.pm-toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.pm-outline-btn {
-  min-height: 40px;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  background: #fff;
-  color: #111;
-  font: inherit;
-  font-weight: 600;
-  padding: 0 18px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.pm-outline-btn:hover {
-  background: #f5f7fa;
-}
-
-.pm-danger-btn {
-  color: #d92727;
-}
-
-.pm-table-search {
-  width: 240px;
-  height: 40px;
-  padding-left: 19px;
-}
-
-.pm-table-search span {
-  display: none;
-}
-
-.pm-filter-wrap {
-  position: relative;
-}
-
-.pm-filter-menu {
-  position: absolute;
-  top: 47px;
-  right: 0;
-  width: 220px;
-  z-index: 10;
-  background: #fff;
-  border: 1px solid #ddd;
-  box-shadow: 0 8px 22px #00000015;
-  border-radius: 12px;
-  padding: 15px;
-  display: grid;
-  gap: 10px;
-}
-
-.pm-filter-menu label {
-  font-weight: 600;
-}
-
-.pm-filter-menu select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: white;
-}
-
-.pm-selection-info {
-  display: block;
-  margin-top: 5px;
-  color: #2257b5;
-}
-
-.pm-table-scroll {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.pm-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: auto;
-}
-
-.pm-table thead {
-  background: #f5f6ff;
-}
-
-.pm-table th {
-  height: 45px;
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-  padding: 10px 7px;
-  text-align: center;
-}
-
-.pm-table td {
-  height: 61px;
-  padding: 8px 7px;
-  border-top: 1px solid #ccc;
-  text-align: center;
-  vertical-align: middle;
-}
-
-.pm-table tbody tr:hover {
-  background: #fafbff;
-}
-
-.pm-table .pm-check-cell {
-  width: 43px;
-  padding: 7px 8px;
-}
-
-.pm-check-cell input {
-  width: 19px;
-  height: 19px;
-  margin: 0;
-  accent-color: var(--pm-blue);
-  cursor: pointer;
-}
-
-.pm-product-name {
-  min-width: 115px;
-  max-width: 155px;
-  text-align: left !important;
-  font-size: 15px;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-
-.pm-small-cell {
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.pm-price {
-  min-width: 83px;
-}
-
-.pm-category-tag {
-  display: inline-block;
-  padding: 3px 6px;
-  border-radius: 5px;
-  border: 1px solid #c6c6c6;
-  font-size: 12px;
-  white-space: nowrap;
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tag-0 { background: #fff6be; color: #8a6300; }
-.tag-1 { background: #d8e7ff; color: #194f9b; }
-.tag-2 { background: #f3d6eb; color: #9a3278; }
-.tag-3 { background: #d8c0f3; color: #44315e; }
-.tag-4 { background: #d2eed9; color: #246b3a; }
-.tag-5 { background: #ffddb8; color: #8d4d05; }
-
-.pm-status {
-  display: inline-block;
-  min-width: 79px;
-  padding: 4px 7px;
-  border: 1px solid transparent;
-  border-radius: 5px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.status-in {
-  background: #d4efda;
-  color: #23813a;
-  border-color: #a5c7ad;
-}
-
-.status-low {
-  background: #ffdbad;
-  color: #99590b;
-  border-color: #e6b36e;
-}
-
-.status-out {
-  background: #ffbfc1;
-  color: #e31924;
-  border-color: #ff7b80;
-}
-
-.pm-row-actions {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 6px;
-}
-
-.pm-action-btn {
-  width: 31px;
-  height: 31px;
-  padding: 0;
-  border: 1px solid #ccc;
-  border-radius: 11px;
-  background: #fff;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.pm-action-btn:hover {
-  background: #f0f2f8;
-}
-
-.pm-action-btn.edit {
-  color: #003dff;
-  font-size: 29px;
-  font-weight: 700;
-}
-
-.pm-action-btn.delete {
-  color: #f32222;
-  font-size: 22px;
-}
-
-.pm-action-btn.more {
-  color: #111;
-  font-weight: 700;
-  font-size: 16px;
-}
-
-.pm-empty {
-  height: 100px !important;
-  color: #777;
-  text-align: center !important;
-}
-
-.pm-table-footer {
-  min-height: 72px;
-  border-top: 1px solid #ccc;
-  padding: 12px 14px 12px 39px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-}
-
-.pm-pagination-info {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.pm-page-size {
-  border: 1px solid #ddd;
-  border-radius: 7px;
-  padding: 6px;
-  background: #fff;
-  font: inherit;
-}
-
-.pm-pagination {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.pm-pagination button {
-  min-width: 33px;
-  height: 41px;
-  border: 1px solid #aaa;
-  border-radius: 9px;
-  background: #fffafa;
-  font: inherit;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-.pm-pagination button.current {
-  color: #fff;
-  background: var(--pm-blue);
-}
-
-.pm-pagination button:disabled {
-  opacity: .4;
-  cursor: not-allowed;
-}
-
-.pm-page-dots {
-  font-size: 18px;
-}
-
-.pm-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  padding: 20px;
-  background: #06152d80;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow-y: auto;
-}
-
-.pm-modal {
-  width: min(560px, 100%);
-  background: #fff;
-  border-radius: 18px;
-  padding: 25px;
-  box-shadow: 0 20px 70px #00000030;
-}
-
-.pm-modal-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 25px;
-}
-
-.pm-modal-header h2 {
-  margin: 0 0 8px;
-  font-size: 24px;
-}
-
-.pm-modal-header p {
-  margin: 0;
-  color: #777;
-}
-
-.pm-modal-close {
-  align-self: flex-start;
-  border: 0;
-  background: transparent;
-  font-size: 30px;
-  cursor: pointer;
-}
-
-.pm-form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.pm-form-grid label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-weight: 600;
-}
-
-.pm-form-grid input,
-.pm-form-grid select {
-  width: 100%;
-  height: 43px;
-  border: 1px solid #ccc;
-  border-radius: 9px;
-  padding: 0 11px;
-  font: inherit;
-  font-weight: 400;
-  background: #fff;
-}
-
-.pm-form-grid input:focus,
-.pm-form-grid select:focus {
-  outline: 2px solid #b5c9ff;
-  border-color: var(--pm-blue);
-}
-
-.pm-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 26px;
-}
-
-.pm-toast {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 200;
-  max-width: min(420px, calc(100vw - 32px));
-  padding: 15px 17px;
-  background: #fff;
-  color: #163c27;
-  border: 1px solid #b8dfc5;
-  border-left: 5px solid #20a653;
-  border-radius: 10px;
-  box-shadow: 0 5px 25px #0000001a;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.pm-toast button {
-  border: 0;
-  background: transparent;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-@media (min-width: 1600px) {
-  .pm-main {
-    padding-left: 26px;
-    padding-right: 29px;
-  }
-
-  .pm-workspace {
-    grid-template-columns: 270px minmax(0, 1fr);
-    gap: 17px;
-  }
-
-  .pm-table td {
-    height: 64px;
-  }
-}
-
-@media (max-width: 1350px) {
-  .pm-sidebar {
-    width: 255px;
-    min-width: 225px;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .pm-brand {
-    padding: 0 2px;
-    gap: 6px;
-  }
-
-  .pm-brand-icon {
-    width: 48px;
-    font-size: 36px;
-  }
-
-  .pm-brand h2 {
-    font-size: 23px;
-  }
-
-  .pm-nav-item {
-    gap: 12px;
-    padding: 0 12px;
-    font-size: 14px;
-  }
-
-  .pm-header {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    margin-bottom: 25px;
-  }
-
-  .pm-header-actions {
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .pm-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .pm-workspace {
-    grid-template-columns: 215px minmax(0, 1fr);
-  }
-
-  .pm-table-toolbar {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .pm-toolbar-actions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .pm-table-search {
-    flex: 1;
-    min-width: 145px;
-  }
-}
-
-@media (max-width: 900px) {
-  .pm-sidebar {
-    width: 76px;
-    min-width: 76px;
-    padding: 22px 9px;
-  }
-
-  .pm-brand {
-    justify-content: center;
-    padding: 0;
-    margin-bottom: 32px;
-  }
-
-  .pm-brand > div:last-child,
-  .pm-nav-item > span:last-child,
-  .pm-sidebar-footer > div {
-    display: none;
-  }
-
-  .pm-brand-icon {
-    width: 49px;
-    height: 45px;
-  }
-
-  .pm-nav-item {
-    justify-content: center;
-    padding: 0;
-    gap: 0;
-  }
-
-  .pm-nav-icon {
-    width: auto;
-  }
-
-  .pm-sidebar-footer {
-    justify-content: center;
-  }
-
-  .pm-workspace {
-    grid-template-columns: 1fr;
-  }
-
-  .pm-category-panel {
-    max-height: 330px;
-    overflow-y: auto;
-  }
-
-  .pm-category-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
-  }
-
-  .pm-category-footer {
-    padding: 12px;
-  }
-}
-
-@media (max-width: 600px) {
-  .pm-main {
-    padding: 22px 12px;
-  }
-
-  .pm-header-actions {
-    width: 100%;
-  }
-
-  .pm-global-search {
-    flex: 1;
-    width: auto;
-    min-width: 0;
-  }
-
-  .pm-date {
-    display: none;
-  }
-
-  .pm-heading h1 {
-    font-size: 25px;
-  }
-
-  .pm-stats {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .pm-stat-card {
-    min-height: 88px;
-  }
-
-  .pm-stat-out {
-    flex-wrap: wrap;
-  }
-
-  .pm-add-top {
-    margin-left: auto;
-  }
-
-  .pm-toolbar-actions > .pm-outline-btn {
-    padding: 0 10px;
-  }
-
-  .pm-table-toolbar {
-    padding: 13px;
-  }
-
-  .pm-table-search {
-    width: 100%;
-    flex-basis: 100%;
-  }
-
-  .pm-table-footer {
-    padding: 15px;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .pm-pagination {
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .pm-form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .pm-modal {
-    padding: 20px;
-  }
-
-  .pm-category-list {
-    grid-template-columns: 1fr;
-  }
-}
-`;

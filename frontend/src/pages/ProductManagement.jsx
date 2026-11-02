@@ -656,6 +656,14 @@ export default function ProductManagement({ onNavigate, onLogout }) {
               </div>
 
               <div className="pm-toolbar-actions">
+                  {/* Add New Product Button */}
+  <button
+    type="button"
+    className="pm-primary pm-add-top"
+    onClick={openAddModal}
+  >
+    + Add New Product
+  </button>
                 {selectedIds.length > 0 && (
                   <button
                     type="button"

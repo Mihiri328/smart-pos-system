@@ -1678,7 +1678,12 @@ button, input { font: inherit; }
   }
 
   .pm-add-top {
-    margin-left: auto;
+    
+  white-space: nowrap;
+  padding: 10px 16px;
+  font-size: 14px;
+  height: 40px;
+
   }
 
   .pm-toolbar-actions > .pm-outline-btn {

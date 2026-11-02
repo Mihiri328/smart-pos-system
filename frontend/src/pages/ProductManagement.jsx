@@ -551,12 +551,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
               <p className="red-text">Urgent restock</p>
             </div>
 
-            <button
-              className="pm-primary pm-add-top"
-              onClick={openAddModal}
-            >
-              + Add New Products
-            </button>
+            
           </div>
         </section>
 
@@ -656,6 +651,14 @@ export default function ProductManagement({ onNavigate, onLogout }) {
               </div>
 
               <div className="pm-toolbar-actions">
+                  {/* Add New Product Button */}
+  <button
+    type="button"
+    className="pm-primary pm-add-top"
+    onClick={openAddModal}
+  >
+    + Add New Product
+  </button>
                 {selectedIds.length > 0 && (
                   <button
                     className="pm-outline-btn pm-danger-btn"

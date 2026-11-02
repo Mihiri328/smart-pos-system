@@ -5,10 +5,10 @@ const db = require("../src/config/database");
 
 async function createUser() {
   try {
-    const username = "admin";
+    const username = "mihiri";
     const name = "Smart POS Admin";
-    const email = "admin@example.com";
-    const password = "Admin@123456";
+    const email = "nethushiabesingh28@gmail.com";
+    const password = "Sadu@99m";
 
     console.log("Checking database connection...");
 

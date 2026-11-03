@@ -587,6 +587,8 @@ button, input { font: inherit; }
 
 .billing-footer { display: flex; justify-content: space-between; gap: 15px; padding: 17px 27px; color: #8993a7; border-top: 1px solid var(--billing-border); font-size: 10px; width: 100%; }
 
+
+
 /* ==================== SALES HISTORY STYLES ==================== */
 
 .sh-page .sh-topbar { width: 100%; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 25px; }
@@ -702,11 +704,7 @@ button, input { font: inherit; }
 }
 
 
-/* =====================================================
-   PRODUCT MANAGEMENT PAGE
-   Append this section to the END of style.css
-   Shared navigation styles use existing .sp-* classes
-===================================================== */
+/* =============    PRODUCT MANAGEMENT PAGE =========================== */
 
 .pm-app {
   --pm-navy: #061d40;
@@ -1678,7 +1676,12 @@ button, input { font: inherit; }
   }
 
   .pm-add-top {
-    margin-left: auto;
+    
+  white-space: nowrap;
+  padding: 10px 16px;
+  font-size: 14px;
+  height: 40px;
+
   }
 
   .pm-toolbar-actions > .pm-outline-btn {
@@ -1721,10 +1724,7 @@ button, input { font: inherit; }
 
 
 
-/* =========================================
-   INVENTORY PAGE
-   Uses the shared Sales History navigation
-========================================= */
+/* ===================  INVENTORY PAGE  ==================== */
 
 .inv-page {
   min-height: 100vh;
@@ -2630,6 +2630,12 @@ button, input { font: inherit; }
     flex: 1;
   }
 }
+
+
+
+
+/* ===============   SUPPLIER MANAGEMENT PAGE  ================= */
+
 
 /* ========================================
    CUSTOMER MANAGEMENT PAGE
@@ -3640,3 +3646,4 @@ button, input { font: inherit; }
     font-size: 15px;
   }
 }
+

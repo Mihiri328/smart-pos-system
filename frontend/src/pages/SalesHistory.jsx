@@ -158,7 +158,6 @@ export default function SalesHistory({ onNavigate, onLogout }) {
           </button>
 
           <div className="sp-page-heading sh-heading">
-            <span>TRANSACTIONS</span>
             <h1>Sales History</h1>
             <p>Review and manage your store sales.</p>
           </div>
@@ -195,7 +194,6 @@ export default function SalesHistory({ onNavigate, onLogout }) {
                 <strong>Owner</strong>
                 <small>Store Owner</small>
               </div>
-              <ChevronDown size={14} />
             </div>
           </div>
         </header>
@@ -276,9 +274,8 @@ export default function SalesHistory({ onNavigate, onLogout }) {
           </div>
 
           <div className="sh-bottom-note">
-            <Store size={15} />
-            <span>Smart POS · Food City Management</span>
-            <span className="sh-demo-label">Sample data</span>
+            
+            <span>© Smart POS · FoodCity Smart POS System</span>
           </div>
         </section>
       </main>

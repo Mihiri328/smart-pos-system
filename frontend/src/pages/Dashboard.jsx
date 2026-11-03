@@ -167,9 +167,16 @@ export default function Dashboard({ onNavigate, onLogout }) {
         <header className="sp-topbar">
           <button className="sp-mobile-menu" onClick={() => setMobileMenu(true)} aria-label="Open menu"><Menu size={21}/></button>
           <div className="sp-page-heading">
-            <span>OVERVIEW</span>
             <h1>Welcome back, Owner!</h1>
-            <p><CalendarDays size={14}/> Tuesday, 27 October 2026 <span className="sp-dot">•</span> Store Owner Dashboard</p>
+            <p>
+              <CalendarDays size={14} />
+              {new Date().toLocaleDateString("en-GB", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+              <span className="billing-heading-dot">.</span>Store Owner Dashboard</p>
           </div>
           <div className="sp-top-actions">
             <label className="sp-search"><Search size={17}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search sales / order ID..." /></label>
@@ -177,7 +184,7 @@ export default function Dashboard({ onNavigate, onLogout }) {
               <button className="sp-icon-button" onClick={() => setShowNotifications((v) => !v)} aria-label="Notifications"><Bell size={19}/><i>4</i></button>
               {showNotifications && <div className="sp-notification-pop"><strong>Notifications</strong><p><AlertTriangle size={14}/> 3 products have critical stock.</p><p><CalendarDays size={14}/> 5 products are expiring soon.</p><p><ClipboardList size={14}/> 2 purchase orders pending.</p></div>}
             </div>
-            <div className="sp-profile"><div className="sp-avatar">O</div><div><strong>Owner</strong><small>Store Owner</small></div><ChevronDown size={14}/></div>
+            <div className="sp-profile"><div className="sp-avatar">O</div><div><strong>Owner</strong><small>Store Owner</small></div></div>
           </div>
         </header>
 
@@ -267,7 +274,7 @@ export default function Dashboard({ onNavigate, onLogout }) {
           </article>
         </section>
 
-        <footer className="sp-footer"><span>© 2026 Smart POS · Food City Management</span><span>Dashboard preview · Sample data</span></footer>
+        <footer className="sp-footer"><span>© Smart POS · FoodCity Smart POS System</span></footer>
       </main>
     </div>
   );

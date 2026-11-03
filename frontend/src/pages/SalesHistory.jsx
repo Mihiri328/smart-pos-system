@@ -224,10 +224,10 @@ export default function SalesHistory({ onNavigate, onLogout }) {
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Order ID</th>
-                    <th>Amount</th>
+                    <th>Items ID</th>
                     <th>Payment</th>
                     <th>Items</th>
+                    <th>Amount</th>
                     <th>Status</th>
                     <th>Details</th>
                   </tr>
@@ -237,9 +237,9 @@ export default function SalesHistory({ onNavigate, onLogout }) {
                     <tr key={sale.id}>
                       <td>{sale.date}</td>
                       <td className="sh-order-id">{sale.id}</td>
-                      <td className="sh-amount">{formatMoney(sale.amount)}</td>
                       <td>{sale.payment}</td>
                       <td>{sale.items}</td>
+                      <td className="sh-amount">{formatMoney(sale.amount)}</td>
                       <td><span className="sh-status">{sale.status}</span></td>
                       <td>
                         <button className="sh-view-button" onClick={() => setSelectedSale(sale)}>

@@ -3418,7 +3418,6 @@ button, input { font: inherit; }
 
 
 
-/* ===============   SUPPLIER MANAGEMENT PAGE  ================= */
 
 
 /* ========================================
@@ -3711,8 +3710,7 @@ button, input { font: inherit; }
 }
 
 
-/* ================================
-   REPORTS PAGE
+/* ================================ REPORTS PAGE ================= */
 
 .reports-app {
   --navy: #09234b;

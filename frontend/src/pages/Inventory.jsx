@@ -602,7 +602,7 @@ export default function Inventory({ onNavigate, onLogout }) {
 
           <div className="sp-page-heading sh-heading">
             <h1>Inventory</h1>
-            <p>Manage stock procurement and track inventory levels.</p>
+            <p>Add, Edit and manage your store products</p>
           </div>
 
           <div className="sp-top-actions">

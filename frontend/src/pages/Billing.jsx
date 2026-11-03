@@ -435,7 +435,7 @@ export default function Billing({ onNavigate, onLogout }) {
             <Menu size={21} />
           </button>
 
-          <div className="billing-page-heading">
+          <div className="sp-page-heading sh-heading">
             <h1>POS Billing</h1>
 
             <p>

@@ -53,7 +53,7 @@ const initialProducts = [
   },
   {
     id: 4,
-    name: "Cooking Oil (1L)",
+    name: "Special Cooking Oil (1L)",
     sku: "POS-10231",
     category: "Cooking Essentials",
     unit: "Bottle",
@@ -63,7 +63,7 @@ const initialProducts = [
   },
   {
     id: 5,
-    name: "Tea Bags (200g)",
+    name: "Tea Bags(200g)",
     sku: "POS-10230",
     category: "Beverages",
     unit: "Pack",
@@ -73,7 +73,7 @@ const initialProducts = [
   },
   {
     id: 6,
-    name: "Prima Noodles",
+    name: "New Prima Noodles",
     sku: "POS-10229",
     category: "Snacks",
     unit: "Pack",
@@ -435,7 +435,7 @@ export default function Billing({ onNavigate, onLogout }) {
             <Menu size={21} />
           </button>
 
-          <div className="billing-page-heading">
+          <div className="sp-page-heading sh-heading">
             <h1>POS Billing</h1>
 
             <p>

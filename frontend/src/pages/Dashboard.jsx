@@ -166,7 +166,7 @@ export default function Dashboard({ onNavigate, onLogout }) {
       <main className="sp-main">
         <header className="sp-topbar">
           <button className="sp-mobile-menu" onClick={() => setMobileMenu(true)} aria-label="Open menu"><Menu size={21}/></button>
-          <div className="sp-page-heading">
+          <div className="sp-page-heading sh-heading">
             <h1>Welcome back, Owner!</h1>
             <p>
               <CalendarDays size={14} />

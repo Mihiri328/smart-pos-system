@@ -456,7 +456,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
             <Menu size={21} />
           </button>
 
-          <div className="pm-heading">
+          <div className="sp-page-heading sh-heading">
             <h1>Product Management</h1>
             <p>Add, Edit and manage your store products</p>
           </div>

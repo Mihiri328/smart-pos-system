@@ -544,13 +544,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
               <p className="red-text">Urgent restock</p>
             </div>
 
-            <button
-              type="button"
-              className="pm-primary pm-add-top"
-              onClick={openAddModal}
-            >
-              + Add New Products
-            </button>
+            
           </div>
         </section>
 

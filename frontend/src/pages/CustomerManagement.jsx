@@ -322,8 +322,7 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
             <Menu size={21} />
           </button>
 
-          <div className="sp-page-heading">
-            <span>CUSTOMER MANAGEMENT</span>
+          <div className="sp-page-heading sh-heading">
             <h1>Customer Management</h1>
             <p>Manage your customers and their account details.</p>
           </div>

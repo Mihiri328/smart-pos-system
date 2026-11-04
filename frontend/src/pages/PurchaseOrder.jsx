@@ -1,6 +1,21 @@
 
 import { useMemo, useState } from "react";
-import "./PurchaseOrder.css";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  Warehouse,
+  Truck,
+  ClipboardList,
+  Users,
+  History,
+  ChartNoAxesCombined,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
+
 import logo from "../img/Dark logo.jpeg";
 
 const initialOrders = [
@@ -62,19 +77,17 @@ const defaultProducts = [
 ];
 
 const menuItems = [
-  ["▦", "Dashboard"],
-  ["🛒", "POS Billing"],
-  ["▣", "Products Management"],
-  ["⌂", "Inventory"],
-  ["♟", "Suppliers Management"],
-  ["▤", "Purchase Orders"],
-  ["♧", "Customer Management"],
-  ["◕", "Sales History"],
-  ["◷", "Reports"],
-  ["⚙", "Settings"],
-  ["⇥", "Logout"],
+  { label: "Dashboard", page: "dashboard", icon: LayoutDashboard },
+  { label: "POS Billing", page: "billing", icon: ShoppingCart },
+  { label: "Products Management", page: "products", icon: Package },
+  { label: "Inventory", page: "inventory", icon: Warehouse },
+  { label: "Suppliers Management", page: "suppliers", icon: Truck },
+  { label: "Purchase Orders", page: "purchase-orders", icon: ClipboardList },
+  { label: "Customer Management", page: "customers", icon: Users },
+  { label: "Sales History", page: "sales-history", icon: History },
+  { label: "Reports", page: "reports", icon: ChartNoAxesCombined },
+  { label: "Settings", page: "settings", icon: Settings },
 ];
-
 const pageMap = {
   Dashboard: "dashboard",
   "POS Billing": "pos",
@@ -114,10 +127,12 @@ export default function PurchaseOrder({
   const [orders, setOrders] = useState(initialOrders);
   const [selectedId, setSelectedId] = useState("PO-2026-006");
   const [editingId, setEditingId] = useState(null);
+  
 
   const [supplier, setSupplier] = useState(
     "Ceylon Wholesale Traders"
   );
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [poNumber, setPoNumber] = useState("PO-2026-007");
   const [orderDate, setOrderDate] = useState("2026-10-28");
   const [expectedDate, setExpectedDate] = useState("2026-10-31");
@@ -172,24 +187,24 @@ export default function PurchaseOrder({
     setEditingId(null);
   };
 
-  const handleNavigation = (label) => {
-    if (label === "Logout") {
-      if (onLogout) {
-        onLogout();
-      } else {
-        setNotice("Connect the Logout action in App.jsx.");
-      }
-      return;
-    }
+  const handleNavigation = (item) => {
+  setMobileMenu(false);
 
-    const destination = pageMap[label];
-
-    if (destination && onNavigate) {
-      onNavigate(destination);
+  if (item.page === "logout") {
+    if (onLogout) {
+      onLogout();
     } else {
-      setNotice(`${label} page navigation is not connected yet.`);
+      setNotice("Logout is not connected yet.");
     }
-  };
+    return;
+  }
+
+  if (onNavigate) {
+    onNavigate(item.page);
+  } else {
+    setNotice(`${item.label} page navigation is not connected yet.`);
+  }
+};
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -311,7 +326,9 @@ export default function PurchaseOrder({
           ? {
               ...product,
               [field]:
-                field === "name" ? value : Math.max(0, Number(value) || 0),
+                field === "name"
+                  ? value
+                  : Math.max(0, Number(value) || 0),
             }
           : product
       )
@@ -332,417 +349,491 @@ export default function PurchaseOrder({
   const displayDate = new Date().toLocaleDateString("en-CA");
 
   return (
-    <div className="supplier-app purchase-app">
-      {/* SIDEBAR */}
-      <aside className="supplier-sidebar">
-        <div className="brand">
-          <img
-            src={logo}
-            alt="Smart POS Logo"
-            className="brand-logo"
-          />
-        </div>
+    
+  <div className="supplier-app purchase-app">
 
-        <nav className="side-menu">
-          {menuItems.map(([icon, label]) => {
-            const active =
-              label === "Purchase Orders"
-                ? currentPage === "Purchase Orders"
-                : pageMap[label] === currentPage;
+        {/* SIDEBAR */}
+        {mobileMenu && (
+  <button
+    type="button"
+    className="sp-backdrop"
+    aria-label="Close navigation menu"
+    onClick={() => setMobileMenu(false)}
+  />
+)}
 
-            return (
-              <button
-                type="button"
-                key={label}
-                className={`side-link ${active ? "selected" : ""}`}
-                onClick={() => handleNavigation(label)}
-              >
-                <span className="side-icon">{icon}</span>
-                <span>{label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </aside>
+<aside
+  className={`sp-sidebar ${
+    mobileMenu ? "sp-sidebar-open" : ""
+  } no-print`}
+>
+  <div className="sp-brand">
+    <img
+      src={logo}
+      alt="Smart POS Logo"
+      className="brand-logo"
+    />
 
-      {/* MAIN CONTENT */}
-      <main className="supplier-main purchase-main">
-        {/* TOP HEADER */}
-        <header className="supplier-topbar purchase-topbar">
-          <h1>Purchase Orders</h1>
+    <button
+      type="button"
+      className="sp-close-menu"
+      aria-label="Close menu"
+      onClick={() => setMobileMenu(false)}
+    >
+      <X size={20} />
+    </button>
+  </div>
 
-          <div className="global-search purchase-global-search">
-            <input
-              aria-label="Search purchase orders"
-              placeholder="Search anything ..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            <span>⌕</span>
-          </div>
+  <p className="sp-nav-label">MAIN MENU</p>
 
-          <div className="purchase-notification-wrap">
-            <button
-              type="button"
-              className="notification"
-              aria-label="Notifications"
-              onClick={() =>
-                setShowNotifications((current) => !current)
-              }
-            >
-              ♟<span>{activeOrders}</span>
-            </button>
+  <nav className="sp-nav">
+    {menuItems.map((item) => {
+      const Icon = item.icon;
 
-            {showNotifications && (
-              <div className="purchase-notification-popover">
-                <strong>Notifications</strong>
-                <p>
-                  {activeOrders} purchase order(s) are waiting for
-                  receiving.
-                </p>
-              </div>
-            )}
-          </div>
+      return (
+        <button
+          type="button"
+          key={item.page}
+          className={`sp-nav-item ${
+            item.page === "purchase-orders" &&
+            (currentPage === "Purchase Orders" ||
+              currentPage === "purchase-orders")
+              ? "selected"
+              : currentPage === item.page
+              ? "selected"
+              : ""
+          }`}
+          onClick={() => handleNavigation(item)}
+        >
+          <Icon size={18} />
+          <span>{item.label}</span>
+        </button>
+      );
+    })}
+  </nav>
 
-          <div className="date-display">
-            <span>{displayDate.replaceAll("-", " / ")}</span>
-            <span className="calendar-icon">▦</span>
-          </div>
-        </header>
+  <div className="sp-sidebar-bottom">
+    <div className="sp-help-card">
+      <strong>Need help?</strong>
 
-        {/* PAGE MESSAGE */}
-        {notice && (
-          <div className="purchase-toast" role="status">
-            <span>{notice}</span>
-            <button
-              type="button"
-              onClick={() => setNotice("")}
-              aria-label="Dismiss message"
-            >
-              ×
-            </button>
-          </div>
-        )}
+      <p>
+        Check your stock and sales insights to make better decisions.
+      </p>
+    </div>
 
-        {/* PURCHASE ORDER WORKSPACE */}
-        <div className="purchase-page">
-          <div className="purchase-workspace">
-            {/* LEFT COLUMN */}
-            <div className="purchase-main-column">
-              {/* CREATE PURCHASE ORDER */}
-              <section className="purchase-form-card">
-                <form onSubmit={handleSubmit}>
-                  <div className="purchase-form-grid">
-                    <div className="purchase-field">
-                      <label htmlFor="po-supplier">Supplier</label>
+    <button
+      type="button"
+      className="sp-nav-item"
+      onClick={() =>
+        handleNavigation({
+          label: "Logout",
+          page: "logout",
+        })
+      }
+    >
+      <LogOut size={18} />
+      <span>Logout</span>
+    </button>
+  </div>
+</aside>
 
-                      <select
-                        id="po-supplier"
-                        value={supplier}
-                        onChange={(event) =>
-                          setSupplier(event.target.value)
-                        }
-                        required
-                      >
-                        <option value="Ceylon Wholesale Traders">
-                          Ceylon Wholesale Traders
-                        </option>
-                        <option value="Lanka Beverages PLC">
-                          Lanka Beverages PLC
-                        </option>
-                        <option value="Milo Foods Distributors">
-                          Milo Foods Distributors
-                        </option>
-                        <option value="Colombo Suppliers">
-                          Colombo Suppliers
-                        </option>
-                        <option value="Lanka Distributors">
-                          Lanka Distributors
-                        </option>
-                      </select>
-                    </div>
+        {/* MAIN CONTENT */}
+        <main className="supplier-main purchase-main">
+  <header className="supplier-topbar purchase-topbar">
 
-                    <div className="purchase-field">
-                      <label htmlFor="po-number">PO Number</label>
-                      <input
-                        id="po-number"
-                        value={poNumber}
-                        onChange={(event) =>
-                          setPoNumber(event.target.value)
-                        }
-                        disabled={Boolean(editingId)}
-                        required
-                      />
-                    </div>
+    <button
+      type="button"
+      className="sp-mobile-menu"
+      aria-label="Open navigation menu"
+      onClick={() => setMobileMenu(true)}
+    >
+      <Menu size={21} />
+    </button>
 
-                    <div className="purchase-field">
-                      <label htmlFor="po-order-date">Order Date</label>
-                      <input
-                        id="po-order-date"
-                        type="date"
-                        value={orderDate}
-                        onChange={(event) =>
-                          setOrderDate(event.target.value)
-                        }
-                        required
-                      />
-                    </div>
+    <h1>Purchase Orders</h1>
 
-                    <div className="purchase-field">
-                      <label htmlFor="po-expected-date">
-                        Expected Date
-                      </label>
-                      <input
-                        id="po-expected-date"
-                        type="date"
-                        min={orderDate}
-                        value={expectedDate}
-                        onChange={(event) =>
-                          setExpectedDate(event.target.value)
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="purchase-form-actions">
-                    {editingId && (
-                      <button
-                        type="button"
-                        className="purchase-cancel-edit"
-                        onClick={resetForm}
-                      >
-                        Cancel Edit
-                      </button>
-                    )}
-
-                    <button
-                      type="submit"
-                      className="purchase-create-button"
-                    >
-                      {editingId ? "Update Order" : "Create Order"}
-                    </button>
-                  </div>
-                </form>
-              </section>
-
-              {/* ORDERS TABLE */}
-              <section className="purchase-table-card">
-                <div className="purchase-table-scroll">
-                  <table className="purchase-table">
-                    <thead>
-                      <tr>
-                        <th>PO Number</th>
-                        <th>Supplier</th>
-                        <th>Total Amount</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {filteredOrders.map((order) => (
-                        <tr
-                          key={order.id}
-                          className={
-                            selectedId === order.id
-                              ? "purchase-selected-row"
-                              : ""
-                          }
-                          onClick={() => handleViewOrder(order)}
-                        >
-                          <td className="purchase-po-id">{order.id}</td>
-
-                          <td className="purchase-supplier-cell">
-                            {order.supplier}
-                          </td>
-
-                          <td className="purchase-amount">
-                            {formatMoney(order.amount)}
-                          </td>
-
-                          <td>
-                            <span
-                              className={`purchase-status ${order.status.toLowerCase()}`}
-                            >
-                              {order.status}
-                            </span>
-                          </td>
-
-                          <td>
-                            <div
-                              className="purchase-row-actions"
-                              onClick={(event) =>
-                                event.stopPropagation()
-                              }
-                            >
-                              <button
-                                type="button"
-                                onClick={() => handleViewOrder(order)}
-                              >
-                                View
-                              </button>
-
-                              <span>|</span>
-
-                              <button
-                                type="button"
-                                onClick={() => handleEdit(order)}
-                              >
-                                Edit
-                              </button>
-
-                              {order.status !== "Cancelled" &&
-                                order.status !== "Received" && (
-                                  <>
-                                    <span>|</span>
-                                    <button
-                                      type="button"
-                                      className="purchase-cancel-action"
-                                      onClick={() =>
-                                        handleCancel(order)
-                                      }
-                                    >
-                                      Cancel
-                                    </button>
-                                  </>
-                                )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-
-                      {filteredOrders.length === 0 && (
-                        <tr>
-                          <td
-                            colSpan="5"
-                            className="purchase-empty"
-                          >
-                            No purchase orders found.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
+            <div className="global-search purchase-global-search">
+              <input
+                aria-label="Search purchase orders"
+                placeholder="Search anything ..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              <span>⌕</span>
             </div>
 
-            {/* RIGHT ORDER DETAILS PANEL */}
-            <aside className="purchase-details-card">
-              {selectedOrder && (
-                <>
-                  <div className="purchase-details-heading">
-                    <h2>Active {selectedOrder.id}</h2>
-                    <p>{selectedOrder.supplier}</p>
-                  </div>
+            <div className="purchase-notification-wrap">
+              <button
+                type="button"
+                className="notification"
+                aria-label="Notifications"
+                onClick={() =>
+                  setShowNotifications((current) => !current)
+                }
+              >
+                ♟<span>{activeOrders}</span>
+              </button>
 
-                  <div className="purchase-products-heading">
-                    <span>Products</span>
-                    <span>Qty</span>
-                  </div>
-
-                  <div className="purchase-products-list">
-                    {products.map((product, index) => (
-                      <div
-                        className="purchase-product"
-                        key={`${product.name}-${index}`}
-                      >
-                        <div className="purchase-product-info">
-                          <strong>{product.name}</strong>
-                          <span>
-                            {product.qty} Qty -{" "}
-                            {formatMoney(product.price)}
-                          </span>
-                        </div>
-
-                        <strong>
-                          {formatMoney(product.qty * product.price)}
-                        </strong>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="purchase-totals">
-                    <div>
-                      <span>Subtotal</span>
-                      <strong>{formatMoney(subtotal)}</strong>
-                    </div>
-
-                    <div>
-                      <span>Tax (11.8%)</span>
-                      <strong>{formatMoney(tax)}</strong>
-                    </div>
-
-                    <div className="purchase-grand-total">
-                      <span>Grand Total</span>
-                      <strong>
-                        {formatMoney(
-                          selectedOrder.amount || grandTotal
-                        )}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="purchase-receive-button"
-                    onClick={handleReceiveStock}
-                    disabled={
-                      selectedOrder.status === "Received" ||
-                      selectedOrder.status === "Cancelled"
-                    }
-                  >
-                    {selectedOrder.status === "Received"
-                      ? "Stock Received"
-                      : selectedOrder.status === "Cancelled"
-                        ? "Order Cancelled"
-                        : "Receiving Stock"}
-                  </button>
-
-                  <div className="purchase-timeline">
-                    <div className="purchase-timeline-item active">
-                      <span className="purchase-timeline-dot" />
-                      <div>
-                        <strong>Order Updated</strong>
-                        <p>{formatDate(selectedOrder.orderDate)}</p>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`purchase-timeline-item ${
-                        selectedOrder.status === "Received"
-                          ? "active"
-                          : ""
-                      }`}
-                    >
-                      <span className="purchase-timeline-dot" />
-                      <div>
-                        <strong>
-                          {selectedOrder.status === "Received"
-                            ? "Stock Received"
-                            : selectedOrder.status === "Cancelled"
-                              ? "Order Cancelled"
-                              : "Expected Delivery"}
-                        </strong>
-                        <p>{formatDate(selectedOrder.expectedDate)}</p>
-                      </div>
-                    </div>
-
-                    <div className="purchase-timeline-item">
-                      <span className="purchase-timeline-dot" />
-                      <div>
-                        <strong>Current Status</strong>
-                        <p>{selectedOrder.status}</p>
-                      </div>
-                    </div>
-                  </div>
-                </>
+              {showNotifications && (
+                <div className="purchase-notification-popover">
+                  <strong>Notifications</strong>
+                  <p>
+                    {activeOrders} purchase order(s) are waiting for
+                    receiving.
+                  </p>
+                </div>
               )}
-            </aside>
+            </div>
+
+            <div className="date-display">
+              <span>{displayDate.replaceAll("-", " / ")}</span>
+              <span className="calendar-icon">▦</span>
+            </div>
+          </header>
+
+          {/* PAGE MESSAGE */}
+          {notice && (
+            <div className="purchase-toast" role="status">
+              <span>{notice}</span>
+              <button
+                type="button"
+                onClick={() => setNotice("")}
+                aria-label="Dismiss message"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          {/* PURCHASE ORDER WORKSPACE */}
+          <div className="purchase-page">
+            <div className="purchase-workspace">
+
+              {/* LEFT COLUMN */}
+              <div className="purchase-main-column">
+
+                {/* CREATE PURCHASE ORDER */}
+                <section className="purchase-form-card">
+                  <form onSubmit={handleSubmit}>
+                    <div className="purchase-form-grid">
+
+                      <div className="purchase-field">
+                        <label htmlFor="po-supplier">Supplier</label>
+
+                        <select
+                          id="po-supplier"
+                          value={supplier}
+                          onChange={(event) =>
+                            setSupplier(event.target.value)
+                          }
+                          required
+                        >
+                          <option value="Ceylon Wholesale Traders">
+                            Ceylon Wholesale Traders
+                          </option>
+                          <option value="Lanka Beverages PLC">
+                            Lanka Beverages PLC
+                          </option>
+                          <option value="Milo Foods Distributors">
+                            Milo Foods Distributors
+                          </option>
+                          <option value="Colombo Suppliers">
+                            Colombo Suppliers
+                          </option>
+                          <option value="Lanka Distributors">
+                            Lanka Distributors
+                          </option>
+                        </select>
+                      </div>
+
+                      <div className="purchase-field">
+                        <label htmlFor="po-number">PO Number</label>
+                        <input
+                          id="po-number"
+                          value={poNumber}
+                          onChange={(event) =>
+                            setPoNumber(event.target.value)
+                          }
+                          disabled={Boolean(editingId)}
+                          required
+                        />
+                      </div>
+
+                      <div className="purchase-field">
+                        <label htmlFor="po-order-date">Order Date</label>
+                        <input
+                          id="po-order-date"
+                          type="date"
+                          value={orderDate}
+                          onChange={(event) =>
+                            setOrderDate(event.target.value)
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="purchase-field">
+                        <label htmlFor="po-expected-date">
+                          Expected Date
+                        </label>
+                        <input
+                          id="po-expected-date"
+                          type="date"
+                          min={orderDate}
+                          value={expectedDate}
+                          onChange={(event) =>
+                            setExpectedDate(event.target.value)
+                          }
+                          required
+                        />
+                      </div>
+
+                    </div>
+
+                    <div className="purchase-form-actions">
+                      {editingId && (
+                        <button
+                          type="button"
+                          className="purchase-cancel-edit"
+                          onClick={resetForm}
+                        >
+                          Cancel Edit
+                        </button>
+                      )}
+
+                      <button
+                        type="submit"
+                        className="purchase-create-button"
+                      >
+                        {editingId ? "Update Order" : "Create Order"}
+                      </button>
+                    </div>
+                  </form>
+                </section>
+
+                {/* ORDERS TABLE */}
+                <section className="purchase-table-card">
+                  <div className="purchase-table-scroll">
+                    <table className="purchase-table">
+                      <thead>
+                        <tr>
+                          <th>PO Number</th>
+                          <th>Supplier</th>
+                          <th>Total Amount</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {filteredOrders.map((order) => (
+                          <tr
+                            key={order.id}
+                            className={
+                              selectedId === order.id
+                                ? "purchase-selected-row"
+                                : ""
+                            }
+                            onClick={() => handleViewOrder(order)}
+                          >
+                            <td className="purchase-po-id">
+                              {order.id}
+                            </td>
+
+                            <td className="purchase-supplier-cell">
+                              {order.supplier}
+                            </td>
+
+                            <td className="purchase-amount">
+                              {formatMoney(order.amount)}
+                            </td>
+
+                            <td>
+                              <span
+                                className={`purchase-status ${order.status.toLowerCase()}`}
+                              >
+                                {order.status}
+                              </span>
+                            </td>
+
+                            <td>
+                              <div
+                                className="purchase-row-actions"
+                                onClick={(event) =>
+                                  event.stopPropagation()
+                                }
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewOrder(order)}
+                                >
+                                  View
+                                </button>
+
+                                <span>|</span>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleEdit(order)}
+                                >
+                                  Edit
+                                </button>
+
+                                {order.status !== "Cancelled" &&
+                                  order.status !== "Received" && (
+                                    <>
+                                      <span>|</span>
+                                      <button
+                                        type="button"
+                                        className="purchase-cancel-action"
+                                        onClick={() =>
+                                          handleCancel(order)
+                                        }
+                                      >
+                                        Cancel
+                                      </button>
+                                    </>
+                                  )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+
+                        {filteredOrders.length === 0 && (
+                          <tr>
+                            <td
+                              colSpan="5"
+                              className="purchase-empty"
+                            >
+                              No purchase orders found.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </div>
+
+              {/* RIGHT ORDER DETAILS PANEL */}
+              <aside className="purchase-details-card">
+                {selectedOrder && (
+                  <>
+                    <div className="purchase-details-heading">
+                      <h2>Active {selectedOrder.id}</h2>
+                      <p>{selectedOrder.supplier}</p>
+                    </div>
+
+                    <div className="purchase-products-heading">
+                      <span>Products</span>
+                      <span>Qty</span>
+                    </div>
+
+                    <div className="purchase-products-list">
+                      {products.map((product, index) => (
+                        <div
+                          className="purchase-product"
+                          key={`${product.name}-${index}`}
+                        >
+                          <div className="purchase-product-info">
+                            <strong>{product.name}</strong>
+                            <span>
+                              {product.qty} Qty -{" "}
+                              {formatMoney(product.price)}
+                            </span>
+                          </div>
+
+                          <strong>
+                            {formatMoney(product.qty * product.price)}
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="purchase-totals">
+                      <div>
+                        <span>Subtotal</span>
+                        <strong>{formatMoney(subtotal)}</strong>
+                      </div>
+
+                      <div>
+                        <span>Tax (11.8%)</span>
+                        <strong>{formatMoney(tax)}</strong>
+                      </div>
+
+                      <div className="purchase-grand-total">
+                        <span>Grand Total</span>
+                        <strong>
+                          {formatMoney(
+                            selectedOrder.amount || grandTotal
+                          )}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="purchase-receive-button"
+                      onClick={handleReceiveStock}
+                      disabled={
+                        selectedOrder.status === "Received" ||
+                        selectedOrder.status === "Cancelled"
+                      }
+                    >
+                      {selectedOrder.status === "Received"
+                        ? "Stock Received"
+                        : selectedOrder.status === "Cancelled"
+                          ? "Order Cancelled"
+                          : "Receiving Stock"}
+                    </button>
+
+                    <div className="purchase-timeline">
+                      <div className="purchase-timeline-item active">
+                        <span className="purchase-timeline-dot" />
+                        <div>
+                          <strong>Order Updated</strong>
+                          <p>{formatDate(selectedOrder.orderDate)}</p>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`purchase-timeline-item ${
+                          selectedOrder.status === "Received"
+                            ? "active"
+                            : ""
+                        }`}
+                      >
+                        <span className="purchase-timeline-dot" />
+                        <div>
+                          <strong>
+                            {selectedOrder.status === "Received"
+                              ? "Stock Received"
+                              : selectedOrder.status === "Cancelled"
+                                ? "Order Cancelled"
+                                : "Expected Delivery"}
+                          </strong>
+                          <p>
+                            {formatDate(selectedOrder.expectedDate)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="purchase-timeline-item">
+                        <span className="purchase-timeline-dot" />
+                        <div>
+                          <strong>Current Status</strong>
+                          <p>{selectedOrder.status}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </aside>
+
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+  
   );
 }

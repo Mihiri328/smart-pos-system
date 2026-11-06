@@ -601,9 +601,8 @@ export default function Inventory({ onNavigate, onLogout }) {
           </button>
 
           <div className="sp-page-heading sh-heading">
-            <span>STOCK MANAGEMENT</span>
             <h1>Inventory</h1>
-            <p>Manage stock procurement and track inventory levels.</p>
+            <p>Add, Edit and manage your store products</p>
           </div>
 
           <div className="sp-top-actions">
@@ -660,7 +659,6 @@ export default function Inventory({ onNavigate, onLogout }) {
                 <strong>Owner</strong>
                 <small>Store Owner</small>
               </div>
-              <ChevronDown size={14} />
             </div>
           </div>
         </header>

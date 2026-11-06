@@ -1,6 +1,27 @@
-
 import { useMemo, useState } from "react";
-import "./SupplierManagement.css";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  Warehouse,
+  Truck,
+  ClipboardList,
+  Users,
+  History,
+  ChartNoAxesCombined,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Search,
+  Bell,
+  CalendarDays,
+  Filter,
+  Plus,
+  FileText,
+} from "lucide-react";
+
+
 import logo from "../img/Dark logo.jpeg";
 
 const initialSuppliers = [
@@ -69,27 +90,32 @@ const money = (amount) =>
   });
 
 const menuItems = [
-  ["▦", "Dashboard"],
-  ["🛒", "POS Billing"],
-  ["▣", "Products Management"],
-  ["⌂", "Inventory"],
-  ["♟", "Suppliers Management"],
-  ["▤", "Purchase Orders"],
-  ["♧", "Customer Management"],
-  ["◕", "Sales History"],
-  ["◷", "Reports"],
-  ["⚙", "Settings"],
-  ["⇥", "Logout"],
+  { label: "Dashboard", page: "dashboard", icon: LayoutDashboard },
+  { label: "POS Billing", page: "billing", icon: ShoppingCart },
+  { label: "Products Management", page: "products", icon: Package },
+  { label: "Inventory", page: "inventory", icon: Warehouse },
+  { label: "Suppliers Management", page: "suppliers", icon: Truck },
+  { label: "Purchase Orders", page: "purchase-orders", icon: ClipboardList },
+  { label: "Customer Management", page: "customers", icon: Users },
+  { label: "Sales History", page: "sales-history", icon: History },
+  { label: "Reports", page: "reports", icon: ChartNoAxesCombined },
+  { label: "Settings", page: "settings", icon: Settings },
 ];
 
-export default function SupplierManagement({ onNavigate, currentPage }) {
+export default function SupplierManagement({
+  onNavigate,
+  currentPage = "suppliers",
+  onLogout,
+}) {
   const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState("");
+
   const [newSupplier, setNewSupplier] = useState({
     company: "",
     contact: "",
@@ -100,16 +126,22 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
 
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter((supplier) => {
-      const text = `${supplier.company} ${supplier.contact} ${supplier.phone} ${supplier.email}`.toLowerCase();
+      const text =
+        `${supplier.company} ${supplier.contact} ${supplier.phone} ${supplier.email}`.toLowerCase();
+
       const matchesSearch = text.includes(search.toLowerCase());
-      const matchesFilter =
-        filter === "All" || supplier.status === filter;
+      const matchesFilter = filter === "All" || supplier.status === filter;
+
       return matchesSearch && matchesFilter;
     });
   }, [suppliers, search, filter]);
 
   const pageSize = 4;
-  const totalPages = Math.max(1, Math.ceil(filteredSuppliers.length / pageSize));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredSuppliers.length / pageSize)
+  );
+
   const visibleSuppliers = filteredSuppliers.slice(
     (page - 1) * pageSize,
     page * pageSize
@@ -120,6 +152,11 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
     0
   );
 
+  function showNotice(message, duration = 3000) {
+    setNotice(message);
+    setTimeout(() => setNotice(""), duration);
+  }
+
   function addSupplier(event) {
     event.preventDefault();
 
@@ -127,7 +164,8 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
       ...newSupplier,
       id: Date.now(),
       initials: newSupplier.company
-        .split(" ")
+        .trim()
+        .split(/\s+/)
         .slice(0, 2)
         .map((word) => word[0]?.toUpperCase())
         .join(""),
@@ -137,6 +175,7 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
     };
 
     setSuppliers((current) => [supplier, ...current]);
+
     setNewSupplier({
       company: "",
       contact: "",
@@ -144,60 +183,117 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
       email: "",
       balance: "0",
     });
+
     setPage(1);
     setShowModal(false);
-    setNotice("Supplier added successfully!");
-    setTimeout(() => setNotice(""), 3000);
+    showNotice("Supplier added successfully!");
+  }
+
+  function handleNavigation(item) {
+    setMobileMenu(false);
+
+    if (item.page === "logout") {
+      if (onLogout) {
+        onLogout();
+      } else {
+        showNotice("Logout is not connected yet.");
+      }
+      return;
+    }
+
+    if (onNavigate) {
+      onNavigate(item.page);
+    } else {
+      showNotice(`${item.label} page navigation is not connected yet.`);
+    }
   }
 
   return (
     <div className="supplier-app">
-      <aside className="supplier-sidebar">
-        <div className="brand">
-          <img src={logo} alt="Smart POS Logo" className="brand-logo" />
-          
-        </div>
+      {mobileMenu && (
+        <button
+          type="button"
+          className="sp-backdrop"
+          aria-label="Close navigation menu"
+          onClick={() => setMobileMenu(false)}
+        />
+      )}
 
-        <nav className="side-menu">
-          {menuItems.map(([icon, label]) => {
-  const pageMap = {
-    "Products Management": "products",
-    Inventory: "inventory",
-    "Suppliers Management": "suppliers",
-  };
+      <aside
+  className={`sp-sidebar ${mobileMenu ? "sp-sidebar-open" : ""} no-print`}
+>
+  <div className="sp-brand">
+    <img src={logo} alt="Smart POS Logo" className="brand-logo" />
 
-  const activeLabel = {
-    products: "Products Management",
-    inventory: "Inventory",
-    suppliers: "Suppliers Management",
-  }[currentPage];
-
-  return (
     <button
       type="button"
-      key={label}
-      className={`side-link ${
-        label === activeLabel ? "selected" : ""
-      }`}
-      onClick={() => {
-        if (pageMap[label] && onNavigate) {
-          onNavigate(pageMap[label]);
-        } else {
-          setNotice(`${label} page navigation is not connected yet.`);
-          setTimeout(() => setNotice(""), 2500);
-        }
-      }}
+      className="sp-close-menu"
+      aria-label="Close menu"
+      onClick={() => setMobileMenu(false)}
     >
-      <span className="side-icon">{icon}</span>
-      <span>{label}</span>
+      <X size={20} />
     </button>
-  );
-})}
-        </nav>
-      </aside>
+  </div>
+
+  <p className="sp-nav-label">MAIN MENU</p>
+
+  <nav className="sp-nav">
+    {menuItems.map((item) => {
+      const Icon = item.icon;
+
+      return (
+        <button
+          type="button"
+          key={item.page}
+          className={`sp-nav-item ${
+            currentPage === item.page ? "selected" : ""
+          }`}
+          onClick={() => handleNavigation(item)}
+        >
+          <Icon size={18} />
+          <span>{item.label}</span>
+        </button>
+      );
+    })}
+  </nav>
+
+  <div className="sp-sidebar-bottom">
+    {/* Need Help Card */}
+    <div className="sp-help-card">
+      <strong>Need help?</strong>
+      <p>
+        Check your stock and sales insights to make better decisions.
+      </p>
+    </div>
+
+    {/* Logout Button */}
+    <button
+      type="button"
+      className="sp-nav-item"
+      onClick={() =>
+        handleNavigation({
+          label: "Logout",
+          page: "logout",
+        })
+      }
+    >
+      <LogOut size={18} />
+      <span>Logout</span>
+    </button>
+  </div>
+</aside>
 
       <main className="supplier-main">
         <header className="supplier-topbar">
+          <button
+            type="button"
+            className="sp-mobile-menu"
+            aria-label="Open navigation menu"
+            onClick={() => setMobileMenu(true)}
+          >
+            <Menu size={21} />
+          </button>
+
           <h1>Supplier Management</h1>
 
           <div className="global-search">
@@ -210,21 +306,22 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                 setPage(1);
               }}
             />
-            <span>⌕</span>
+            <Search size={19} />
           </div>
 
           <button
             type="button"
             className="notification"
             aria-label="Notifications"
-            onClick={() => setNotice("You have 4 notifications.")}
+            onClick={() => showNotice("You have 4 notifications.")}
           >
-            ♟<span>4</span>
+            <Bell size={19} />
+            <span>4</span>
           </button>
 
           <div className="date-display">
             <span>2026/ 09 / 13</span>
-            <span className="calendar-icon">▦</span>
+            <CalendarDays size={19} />
           </div>
         </header>
 
@@ -233,7 +330,9 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
         <section className="summary-grid">
           <article className="summary-card">
             <div className="summary-top">
-              <div className="summary-icon blue">▣</div>
+              <div className="summary-icon blue">
+                <FileText size={21} />
+              </div>
               <span className="green-text">12.5%</span>
             </div>
             <p>Total Accounts Payable</p>
@@ -242,16 +341,22 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
 
           <article className="summary-card">
             <div className="summary-top">
-              <div className="summary-icon green">♟</div>
+              <div className="summary-icon green">
+                <Users size={21} />
+              </div>
               <span className="green-text">2 New</span>
             </div>
             <p>Active Suppliers</p>
-            <h2>{suppliers.filter((s) => s.status === "Active").length + 38}</h2>
+            <h2>
+              {suppliers.filter((s) => s.status === "Active").length + 38}
+            </h2>
           </article>
 
           <article className="summary-card">
             <div className="summary-top">
-              <div className="summary-icon red">🚚</div>
+              <div className="summary-icon red">
+                <Truck size={21} />
+              </div>
               <span className="red-text">! &nbsp;5 Pending</span>
             </div>
             <p>Pending Deliveries</p>
@@ -260,7 +365,9 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
 
           <article className="summary-card">
             <div className="summary-top">
-              <div className="summary-icon red">▤</div>
+              <div className="summary-icon red">
+                <ClipboardList size={21} />
+              </div>
               <span className="red-text">Overdue</span>
             </div>
             <p>Overdue Invoices</p>
@@ -282,14 +389,17 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                   type="button"
                   onClick={() => setShowFilter((current) => !current)}
                 >
+                  <Filter size={15} />
                   Filter
                 </button>
+
                 <button
                   className="add-button"
                   type="button"
                   onClick={() => setShowModal(true)}
                 >
-                  + &nbsp; Add Supplier
+                  <Plus size={16} />
+                  Add Supplier
                 </button>
               </div>
             </div>
@@ -297,6 +407,7 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
             {showFilter && (
               <div className="filter-row">
                 <label htmlFor="supplier-status">Supplier status</label>
+
                 <select
                   id="supplier-status"
                   value={filter}
@@ -309,7 +420,14 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                   <option>Active</option>
                   <option>On hold</option>
                 </select>
-                <button type="button" onClick={() => setFilter("All")}>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilter("All");
+                    setPage(1);
+                  }}
+                >
                   Clear
                 </button>
               </div>
@@ -319,9 +437,17 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
               <table className="supplier-table">
                 <thead>
                   <tr>
-                    <th>COMPANY &amp;<br /> CONTACT</th>
+                    <th>
+                      COMPANY &amp;
+                      <br />
+                      CONTACT
+                    </th>
                     <th>COMMUNICATION</th>
-                    <th>PAYABLE<br /> BALANCE</th>
+                    <th>
+                      PAYABLE
+                      <br />
+                      BALANCE
+                    </th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -334,6 +460,7 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                           <div className="company-avatar">
                             {supplier.initials}
                           </div>
+
                           <div className="company-details">
                             <strong>{supplier.company}</strong>
                             <span>{supplier.contact}</span>
@@ -351,7 +478,13 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                       <td>
                         <div className="balance-cell">
                           <strong>Rs. {money(supplier.balance)}</strong>
-                          <span className={supplier.due.startsWith("Due") ? "due-red" : "due-green"}>
+                          <span
+                            className={
+                              supplier.due.startsWith("Due")
+                                ? "due-red"
+                                : "due-green"
+                            }
+                          >
                             {supplier.due}
                           </span>
                         </div>
@@ -429,19 +562,28 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
           <aside className="grn-panel">
             <div className="grn-heading">
               <h3>Recent GRNs</h3>
-              <button type="button" onClick={() => setNotice("All GRNs view is not connected yet.")}>
+              <button
+                type="button"
+                onClick={() =>
+                  showNotice("All GRNs view is not connected yet.")
+                }
+              >
                 View All
               </button>
             </div>
 
             {[1, 2, 3].map((item) => (
               <article className="grn-card" key={item}>
-                <div className={`grn-icon grn-${item}`}>▤</div>
+                <div className={`grn-icon grn-${item}`}>
+                  <FileText size={20} />
+                </div>
+
                 <div className="grn-name">
                   <strong>Name 123</strong>
                   <span>sri lanka</span>
                   <span>PLC</span>
                 </div>
+
                 <div className="grn-amount">
                   <strong>Rs. 400.00</strong>
                   <span>Today, 10.45</span>
@@ -464,7 +606,12 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
           >
             <div className="modal-heading">
               <h2 id="add-supplier-title">Add Supplier</h2>
-              <button type="button" onClick={() => setShowModal(false)}>
+
+              <button
+                type="button"
+                aria-label="Close dialog"
+                onClick={() => setShowModal(false)}
+              >
                 ×
               </button>
             </div>
@@ -476,7 +623,10 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                   required
                   value={newSupplier.company}
                   onChange={(e) =>
-                    setNewSupplier({ ...newSupplier, company: e.target.value })
+                    setNewSupplier({
+                      ...newSupplier,
+                      company: e.target.value,
+                    })
                   }
                   placeholder="Enter company name"
                 />
@@ -488,7 +638,10 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                   required
                   value={newSupplier.contact}
                   onChange={(e) =>
-                    setNewSupplier({ ...newSupplier, contact: e.target.value })
+                    setNewSupplier({
+                      ...newSupplier,
+                      contact: e.target.value,
+                    })
                   }
                   placeholder="Enter contact person"
                 />
@@ -499,7 +652,10 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                 <input
                   value={newSupplier.phone}
                   onChange={(e) =>
-                    setNewSupplier({ ...newSupplier, phone: e.target.value })
+                    setNewSupplier({
+                      ...newSupplier,
+                      phone: e.target.value,
+                    })
                   }
                   placeholder="Enter phone number"
                 />
@@ -511,7 +667,10 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                   type="email"
                   value={newSupplier.email}
                   onChange={(e) =>
-                    setNewSupplier({ ...newSupplier, email: e.target.value })
+                    setNewSupplier({
+                      ...newSupplier,
+                      email: e.target.value,
+                    })
                   }
                   placeholder="Enter email"
                 />
@@ -525,7 +684,10 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                   step="0.01"
                   value={newSupplier.balance}
                   onChange={(e) =>
-                    setNewSupplier({ ...newSupplier, balance: e.target.value })
+                    setNewSupplier({
+                      ...newSupplier,
+                      balance: e.target.value,
+                    })
                   }
                 />
               </label>
@@ -538,6 +700,7 @@ export default function SupplierManagement({ onNavigate, currentPage }) {
                 >
                   Cancel
                 </button>
+
                 <button type="submit" className="add-button">
                   Save Supplier
                 </button>

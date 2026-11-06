@@ -183,7 +183,7 @@ function Settings({ onNavigate, onLogout }) {
             >
               <Menu size={22} />
             </button>
-            <div>
+              <div className="sp-page-heading sh-heading">
               <h1>System Settings</h1>
               <p>Configure your store details, tax rules and user access.</p>
             </div>

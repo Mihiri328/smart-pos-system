@@ -4983,9 +4983,8 @@ button, input { font: inherit; }
   }
 }
 
-
-/* ========================================
-   CUSTOMER MANAGEMENT PAGE
+  /*========================================
+   CUSTOMER MANAGEMENT PAGE*/
 
 .customer-app {
   --navy: #09234b;

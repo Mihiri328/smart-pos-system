@@ -674,7 +674,7 @@ button, input { font: inherit; }
 .billing-products,
 .billing-cart,
 .billing-receipt-panel {
-  min-width: 0;
+  min-width: 350px;
   background: #fff;
   border: 1px solid var(--billing-border);
   border-radius: 13px;
@@ -961,7 +961,7 @@ button, input { font: inherit; }
 }
 
 .billing-cart-items {
-  max-height: 350px;
+  max-height: 1000px;
   overflow-y: auto;
   min-width: 0;
 }
@@ -1432,7 +1432,7 @@ button, input { font: inherit; }
 .sh-bottom-note { display: flex; align-items: center; gap: 7px; margin-top: 18px; color: #8993a5; font-size: 10px; }
 .sh-demo-label { margin-left: auto; padding: 5px 8px; border-radius: 5px; background: #edf1fa; color: #63718c; font-size: 9px; font-weight: 700; }
 
-.sh-modal-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 18px; background: #101b2b77; }
+.sh-modal-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 18px; background: #101b2b77;  overflow-y: auto; }
 .sh-modal { width: 100%; max-width: 900px; padding: 23px; border: 1px solid #e6eaf2; border-radius: 13px; background: #fff; box-shadow: 0 20px 60px #09152b30; }
 .sh-modal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 18px; }
 .sh-modal-heading h2 { margin: 0; color: #172033; font-size: 18px; }

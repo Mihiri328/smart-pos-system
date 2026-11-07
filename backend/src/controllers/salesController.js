@@ -58,7 +58,7 @@ const getAllSales = async (req, res) => {
         const salesQuery = `
             SELECT
                 o.order_id,
-                o.date,
+                DATE_FORMAT(o.date, '%Y-%m-%d') AS date,
                 o.order_no,
                 o.payment_method,
                 o.discount_price,
@@ -121,12 +121,14 @@ const getSaleDetails = async (req, res) => {
         const orderQuery = `
             SELECT
                 order_id,
-                date,
+                DATE_FORMAT(date, '%Y-%m-%d') AS date,
                 order_no,
                 payment_method,
                 discount_price,
                 amount,
-                created_date
+                created_date,
+                amount_paid,
+                change_amount
             FROM orders
             WHERE order_id = ?
         `;

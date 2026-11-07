@@ -3676,22 +3676,44 @@ button, input { font: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9px;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.supplier-app .summary-icon::before {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.95;
+}
+
+.supplier-app .summary-icon svg {
+  position: relative;
+  z-index: 1;
+  color: #ffffff;
+  stroke-width: 2;
 }
 
 .supplier-app .summary-icon.blue {
   background: #eaf2ff;
   color: #2563eb;
+  box-shadow: 0 0 0 3px #f4f7ff;
 }
 
 .supplier-app .summary-icon.green {
   background: #e7f8ef;
   color: #16a34a;
+  box-shadow: 0 0 0 3px #f2fbf5;
 }
 
 .supplier-app .summary-icon.red {
   background: #fff0f0;
   color: #ef4444;
+  box-shadow: 0 0 0 3px #fff7f7;
 }
 
 .supplier-app .green-text {

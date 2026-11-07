@@ -2505,6 +2505,32 @@ button, input { font: inherit; }
   }
 }
 
+/* Product Image and Name */
+
+.pm-product-cell {
+  min-width: 220px;
+}
+
+.pm-product-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pm-product-image {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid #eeeeee;
+  background: #ffffff;
+}
+
+.pm-product-name {
+  font-weight: 600;
+  color: #222222;
+}
 
 
 
@@ -3417,7 +3443,7 @@ button, input { font: inherit; }
 
 
 
-
+/*====================== Supplier management css =======================================*/
 
 
 /* MAIN CONTENT */
@@ -4337,7 +4363,7 @@ button, input { font: inherit; }
 
 
 
-/* =========================================
+/* =========================================   */
    PURCHASE ORDER PAGE CSS
 
 .purchase-app .purchase-page {
@@ -4985,8 +5011,8 @@ button, input { font: inherit; }
 
 
 /* ========================================
-   CUSTOMER MANAGEMENT PAGE
-
+   CUSTOMER MANAGEMENT PAGE  
+*/
 .customer-app {
   --navy: #09234b;
   --blue: #4968f5;

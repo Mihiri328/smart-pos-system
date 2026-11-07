@@ -3306,6 +3306,61 @@ button, input { font: inherit; }
   cursor: pointer;
 }
 
+/* SUMMARY CARD ICON CIRCLES */
+
+.inv-page .inv-stat-circle {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: none;
+  border: none;
+}
+
+/* Total Products - Blue */
+.inv-page .inv-blue-circle {
+  background: #dceafa;
+}
+
+.inv-page .inv-blue-circle svg {
+  background: #4b9cf5;
+}
+
+/* Low Stock Items - Orange */
+.inv-page .inv-orange-circle {
+  background: #ffecd4;
+}
+
+.inv-page .inv-orange-circle svg {
+  background: #ff9f1c;
+}
+
+/* Out of Stock - Red */
+.inv-page .inv-red-circle {
+  background: #ffe0e3;
+}
+
+.inv-page .inv-red-circle svg {
+  background: #ff2635;
+}
+
+/* Inner Circle and Icons */
+.inv-page .inv-stat-circle svg {
+  width: 22px;
+  height: 22px;
+  padding: 11px;
+  box-sizing: content-box;
+  border-radius: 50%;
+  color: #ffffff;
+  stroke: #ffffff;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
 /* Responsive layout */
 
 @media (max-width: 1200px) {
@@ -3380,10 +3435,16 @@ button, input { font: inherit; }
   }
 
   .inv-page .inv-stat-circle {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-  }
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+}
+
+.inv-page .inv-stat-circle svg {
+  width: 18px;
+  height: 18px;
+  padding: 9px;
+}
 
   .inv-page .inv-stat-card strong {
     font-size: 10px;

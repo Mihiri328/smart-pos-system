@@ -21,6 +21,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Pencil,
+
+  AlertTriangle, 
+  PackageX
 } from "lucide-react";
 
 import logo from "../img/black logo.png";
@@ -688,32 +691,37 @@ export default function Inventory({ onNavigate, onLogout }) {
           </div>
 
           {/* Summary cards */}
-          <section className="inv-stat-cards">
-            <div className="inv-stat-card">
-              <div className="inv-stat-circle inv-blue-circle" />
-              <div>
-                <strong>Total Products</strong>
-                <h2>{items.length}</h2>
-              </div>
-            </div>
+<section className="inv-stat-cards">
+  <div className="inv-stat-card">
+    <div className="inv-stat-circle inv-blue-circle">
+      <Package size={22} />
+    </div>
+    <div>
+      <strong>Total Products</strong>
+      <h2>{items.length}</h2>
+    </div>
+  </div>
 
-            <div className="inv-stat-card">
-              <div className="inv-stat-circle inv-orange-circle" />
-              <div>
-                <strong>Low Stock Items</strong>
-                <h2>{lowStockCount}</h2>
-              </div>
-            </div>
+  <div className="inv-stat-card">
+    <div className="inv-stat-circle inv-orange-circle">
+      <AlertTriangle size={22} />
+    </div>
+    <div>
+      <strong>Low Stock Items</strong>
+      <h2>{lowStockCount}</h2>
+    </div>
+  </div>
 
-            <div className="inv-stat-card">
-              <div className="inv-stat-circle inv-red-circle" />
-              <div>
-                <strong>Out of Stock</strong>
-                <h2>{items.filter((item) => item.stock === 0).length}</h2>
-              </div>
-            </div>
-          </section>
-
+  <div className="inv-stat-card">
+    <div className="inv-stat-circle inv-red-circle">
+      <PackageX size={22} />
+    </div>
+    <div>
+      <strong>Out of Stock</strong>
+      <h2>{items.filter((item) => item.stock === 0).length}</h2>
+    </div>
+  </div>
+</section>
           {/* Filters */}
           <div className="inv-filter-tabs">
             {["All", "Active", "Low Stock", "Out of Stock"].map((name) => (

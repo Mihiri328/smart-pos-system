@@ -1382,7 +1382,11 @@ button, input { font: inherit; }
 .sh-clear-search { display: grid; place-items: center; padding: 2px; border: 0; background: transparent; color: #7b8497; cursor: pointer; }
 
 .sh-content { width: 100%; min-width: 0; padding: 23px; background: #fff; border: 1px solid #e9edf4; border-radius: 12px; box-shadow: 0 3px 12px #14213a05; }
-.sh-table-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.sh-table-heading {display: flex; justify-content: space-between; align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
 .sh-table-heading h2 { margin: 0; color: #172033; font-size: 17px; font-weight: 800; }
 .sh-table-heading p { margin: 6px 0 0; color: #8490a3; font-size: 11px; }
 
@@ -1429,7 +1433,7 @@ button, input { font: inherit; }
 .sh-demo-label { margin-left: auto; padding: 5px 8px; border-radius: 5px; background: #edf1fa; color: #63718c; font-size: 9px; font-weight: 700; }
 
 .sh-modal-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 18px; background: #101b2b77; }
-.sh-modal { width: 100%; max-width: 430px; padding: 23px; border: 1px solid #e6eaf2; border-radius: 13px; background: #fff; box-shadow: 0 20px 60px #09152b30; }
+.sh-modal { width: 100%; max-width: 900px; padding: 23px; border: 1px solid #e6eaf2; border-radius: 13px; background: #fff; box-shadow: 0 20px 60px #09152b30; }
 .sh-modal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 18px; }
 .sh-modal-heading h2 { margin: 0; color: #172033; font-size: 18px; }
 .sh-modal-heading p { margin: 6px 0 0; color: #7b8497; font-size: 11px; }
@@ -5990,3 +5994,76 @@ button, input { font: inherit; }
   }
 }
 
+.sh-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sh-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sh-filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.sh-filter-group input,
+.sh-filter-group select {
+  height: 40px;
+  min-width: 155px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  font-size: 13px;
+  outline: none;
+}
+
+.sh-filter-group input:focus,
+.sh-filter-group select:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.1);
+}
+
+@media (max-width: 768px) {
+  .sh-table-heading {
+    align-items: stretch;
+  }
+
+  .sh-filters {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .sh-filter-group input,
+  .sh-filter-group select {
+    width: 100%;
+  }
+}
+/* sales history clear button*/
+
+.sh-clear-button {
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sh-clear-button:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}

@@ -8,6 +8,7 @@ const { rateLimit } = require("express-rate-limit");
 
 const db = require("./src/config/database");
 const authRoutes = require("./src/routes/authRoutes");
+const salesRoutes = require("./src/routes/salesRoutes");
 
 const app = express();
 
@@ -93,6 +94,7 @@ app.use("/api/auth/forgot-password", resetRequestLimiter);
 
 // Authentication routes
 app.use("/api/auth", authRoutes);
+app.use("/api/sales", salesRoutes);
 
 // Handle unknown endpoints
 app.use((req, res) => {

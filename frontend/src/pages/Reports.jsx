@@ -165,7 +165,7 @@ function Reports({ onNavigate, onLogout }) {
               <Menu size={22} />
             </button>
             <div>
-              <h1>Operational Reports</h1>
+              <h1>Reports</h1>
               <p>Monitor your business performance</p>
             </div>
           </div>

@@ -229,7 +229,6 @@ export default function Dashboard({ onNavigate, onLogout }) {
                 {expiringProducts.map((p) => <tr key={p.name}><td>{p.name}</td><td>{p.stock}</td><td><span className="sp-date-warning">{shortDate(p.expiry)}</span></td></tr>)}
               </tbody></table>
             </div>
-            <p className="sp-footnote"><AlertTriangle size={13}/> Demo expiry data — replace with database values.</p>
           </article>
         </section>
 

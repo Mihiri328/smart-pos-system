@@ -1,29 +1,34 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+
 import {
-  LayoutDashboard, ShoppingCart, Package, Warehouse, Truck, ClipboardList,
-  Users, History, ChartNoAxesCombined, Settings, LogOut, Search, Bell,
-  ChevronDown, Menu, X, Store, ChevronLeft, ChevronRight, Download, Eye
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  Warehouse,
+  Truck,
+  ClipboardList,
+  Users,
+  History,
+  ChartNoAxesCombined,
+  Settings,
+  LogOut,
+  Bell,
+  ChevronDown,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Eye,
+  Store
 } from "lucide-react";
 
 import logo from "../img/black logo.png";
 
-const salesData = [
-  { date: "27/10/2026", id: "POS-10234", amount: 2500, payment: "Cash", items: 4, status: "Completed" },
-  { date: "27/10/2026", id: "POS-10233", amount: 3500, payment: "Card", items: 5, status: "Completed" },
-  { date: "27/10/2026", id: "POS-10232", amount: 4500, payment: "Cash", items: 3, status: "Completed" },
-  { date: "27/10/2026", id: "POS-10231", amount: 5500, payment: "Card", items: 4, status: "Completed" },
-  { date: "27/10/2026", id: "POS-10230", amount: 6500, payment: "Cash", items: 4, status: "Completed" },
-  { date: "27/10/2026", id: "POS-10229", amount: 5500, payment: "Card", items: 7, status: "Completed" },
-  { date: "27/10/2026", id: "POS-10228", amount: 6500, payment: "Cash", items: 5, status: "Completed" },
-  { date: "27/10/2026", id: "POS-10227", amount: 6500, payment: "Cash", items: 4, status: "Completed" },
-  { date: "27/10/2026", id: "POS-10226", amount: 5500, payment: "Card", items: 8, status: "Completed" },
-  { date: "27/10/2026", id: "POS-10225", amount: 6500, payment: "Cash", items: 4, status: "Completed" },
-  { date: "26/10/2026", id: "POS-10224", amount: 3200, payment: "QR Pay", items: 3, status: "Completed" },
-  { date: "26/10/2026", id: "POS-10223", amount: 1800, payment: "Cash", items: 2, status: "Completed" },
-  { date: "26/10/2026", id: "POS-10222", amount: 4200, payment: "Card", items: 6, status: "Completed" },
-  { date: "26/10/2026", id: "POS-10221", amount: 2800, payment: "Cash", items: 3, status: "Completed" },
-  { date: "26/10/2026", id: "POS-10220", amount: 7200, payment: "Card", items: 9, status: "Completed" },
-];
+// Backend API URL
+const API_URL = `${
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+}/sales`;
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
@@ -31,47 +36,257 @@ const navItems = [
   { label: "Products Management", icon: Package, page: "products" },
   { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
   { label: "Suppliers Management", icon: Truck, page: "suppliers" },
-  { label: "Purchase Orders", icon: ClipboardList, page: "purchase-orders" },
+  { label: "Purchase Orders", icon: ClipboardList, page: "purchase_orders" },
   { label: "Customer Management", icon: Users, page: "customers" },
   { label: "Sales History", icon: History, page: "sales_history" },
   { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
-  { label: "Settings", icon: Settings, page: "settings" },
+  { label: "Settings", icon: Settings, page: "settings" }
 ];
 
+// Format currency
 const formatMoney = (amount) =>
-  `Rs. ${Number(amount).toLocaleString("en-LK", {
+  `${Number(amount || 0).toLocaleString("en-LK", {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 2
   })}`;
 
+// Format database date as DD/MM/YYYY
+const formatDate = (dateValue) => {
+  if (!dateValue) return "-";
+
+  let year, month, day;
+
+  if (typeof dateValue === "string") {
+    // Handle YYYY-MM-DD and YYYY/MM/DD
+    const match = dateValue.trim().match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
+
+    if (match) {
+      [, year, month, day] = match;
+    } else {
+      return dateValue;
+    }
+  } else {
+    const date = new Date(dateValue);
+
+    if (isNaN(date.getTime())) return "-";
+
+    year = date.getFullYear();
+    month = String(date.getMonth() + 1).padStart(2, "0");
+    day = String(date.getDate()).padStart(2, "0");
+  }
+
+  return `${day}/${month}/${year}`;
+};
+
+// Format date for CSV
+const escapeCSV = (value) =>
+  `"${String(value ?? "").replace(/"/g, '""')}"`;
+
 export default function SalesHistory({ onNavigate, onLogout }) {
-  const [search, setSearch] = useState("");
+  // Sales data
+  const [sales, setSales] = useState([]);
+
+  // Pagination
   const [page, setPage] = useState(1);
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [selectedSale, setSelectedSale] = useState(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   const rowsPerPage = 10;
 
-  const filteredSales = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return salesData.filter((sale) =>
-      `${sale.date} ${sale.id} ${sale.amount} ${sale.payment} ${sale.status}`
-        .toLowerCase()
-        .includes(query)
+  // Filters
+  const [dateFilter, setDateFilter] = useState("");
+  const [orderFilter, setOrderFilter] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("");
+
+  // UI states
+  const [loading, setLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  // Selected transaction
+  const [selectedSale, setSelectedSale] = useState(null);
+
+  // Fetch sales from backend
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchSales = async () => {
+      try {
+        setLoading(true);
+        setNotice("");
+
+        const params = new URLSearchParams();
+
+        params.append("page", page);
+        params.append("limit", rowsPerPage);
+
+        if (dateFilter) {
+          params.append("date", dateFilter);
+        }
+
+        if (orderFilter.trim()) {
+          params.append("orderNo", orderFilter.trim());
+        }
+
+        if (paymentFilter) {
+          params.append("paymentMethod", paymentFilter);
+        }
+
+        const response = await fetch(
+          `${API_URL}?${params.toString()}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            signal: controller.signal
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(
+            result.message || "Failed to retrieve sales."
+          );
+        }
+
+        setSales(result.data || []);
+
+        setTotalRecords(
+          Number(result.pagination?.totalRecords || 0)
+        );
+
+        setTotalPages(
+          Math.max(
+            1,
+            Number(result.pagination?.totalPages || 1)
+          )
+        );
+
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Fetch sales error:", error);
+
+          setSales([]);
+          setTotalRecords(0);
+          setTotalPages(1);
+
+          setNotice(
+            error.message || "Unable to load sales history."
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchSales();
+
+    return () => {
+      controller.abort();
+    };
+  }, [page, dateFilter, orderFilter, paymentFilter]);
+
+  // Fetch individual transaction details
+  async function handleViewSale(orderId) {
+    try {
+      setDetailLoading(true);
+      setSelectedSale(null);
+      setNotice("");
+
+      const response = await fetch(`${API_URL}/${orderId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message || "Failed to retrieve transaction details."
+        );
+      }
+
+      setSelectedSale(result.data);
+
+    } catch (error) {
+      console.error("Fetch sale details error:", error);
+
+      setNotice(
+        error.message || "Unable to load transaction details."
+      );
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
+  // Clear filters
+  function clearFilters() {
+    setDateFilter("");
+    setOrderFilter("");
+    setPaymentFilter("");
+    setPage(1);
+  }
+
+  // Export current page sales to CSV
+  function exportCSV() {
+    if (sales.length === 0) {
+      setNotice("No sales records available to export.");
+      return;
+    }
+
+    const headings = [
+      "Date",
+      "Order No",
+      "Payment Method",
+      "Items",
+      "Amount (LKR)"
+    ];
+
+    const rows = sales.map((sale) => [
+      formatDate(sale.date),
+      sale.order_no,
+      sale.payment_method,
+      sale.item_count,
+      sale.amount
+    ]);
+
+    const csv = [
+      headings.map(escapeCSV).join(","),
+      ...rows.map((row) => row.map(escapeCSV).join(","))
+    ].join("\n");
+
+    const blob = new Blob(
+      ["\uFEFF" + csv],
+      { type: "text/csv;charset=utf-8;" }
     );
-  }, [search]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredSales.length / rowsPerPage));
-  const currentPage = Math.min(page, totalPages);
-  const visibleSales = filteredSales.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
 
+    link.href = url;
+    link.download = "smart-pos-sales-history.csv";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+
+    setNotice("Sales history CSV exported successfully.");
+  }
+
+  // Navigation
   function chooseNav(pageKey) {
     setMobileMenu(false);
+
     if (pageKey === "sales_history") return;
 
     if (onNavigate) {
@@ -81,8 +296,10 @@ export default function SalesHistory({ onNavigate, onLogout }) {
     }
   }
 
+  // Logout
   function handleLogout() {
     setMobileMenu(false);
+
     if (onLogout) {
       onLogout();
     } else if (onNavigate) {
@@ -90,30 +307,27 @@ export default function SalesHistory({ onNavigate, onLogout }) {
     }
   }
 
-  function exportCSV() {
-    const headings = ["Date", "Order ID", "Amount (LKR)", "Payment", "Items", "Status"];
-    const rows = filteredSales.map((sale) => [
-      sale.date, sale.id, sale.amount, sale.payment, sale.items, sale.status,
-    ]);
-    const csv = [headings, ...rows].map((row) => row.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "smart-pos-sales-history.csv";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    setNotice("Sales history CSV exported successfully.");
-  }
-
   return (
     <div className="sp-dashboard sh-page">
-      <aside className={`sp-sidebar ${mobileMenu ? "sp-sidebar-open" : ""}`}>
+
+      {/* Sidebar */}
+      <aside
+        className={`sp-sidebar ${
+          mobileMenu ? "sp-sidebar-open" : ""
+        }`}
+      >
         <div className="sp-brand">
-          <img src={logo} alt="Smart POS Logo" className="brand-logo" />
-          <button className="sp-close-menu" onClick={() => setMobileMenu(false)} aria-label="Close menu">
+          <img
+            src={logo}
+            alt="Smart POS Logo"
+            className="brand-logo"
+          />
+
+          <button
+            className="sp-close-menu"
+            onClick={() => setMobileMenu(false)}
+            aria-label="Close menu"
+          >
             <X size={20} />
           </button>
         </div>
@@ -121,39 +335,69 @@ export default function SalesHistory({ onNavigate, onLogout }) {
         <div className="sp-nav-label">MAIN MENU</div>
 
         <nav className="sp-nav">
-          {navItems.map(({ label, icon: Icon, page: pageKey, count }) => (
-            <button
-              key={pageKey}
-              className={`sp-nav-item ${pageKey === "sales_history" ? "selected" : ""}`}
-              onClick={() => chooseNav(pageKey)}
-            >
-              <Icon size={18} />
-              <span>{label}</span>
-              {count && <span className="sp-nav-count">{count}</span>}
-            </button>
-          ))}
+          {navItems.map(
+            ({ label, icon: Icon, page: pageKey, count }) => (
+              <button
+                key={pageKey}
+                className={`sp-nav-item ${
+                  pageKey === "sales_history" ? "selected" : ""
+                }`}
+                onClick={() => chooseNav(pageKey)}
+              >
+                <Icon size={18} />
+
+                <span>{label}</span>
+
+                {count && (
+                  <span className="sp-nav-count">
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          )}
         </nav>
 
         <div className="sp-sidebar-bottom">
           <div className="sp-help-card">
             <strong>Need help?</strong>
-            <p>Check your stock and sales insights to make better decisions.</p>
+
+            <p>
+              Check your stock and sales insights to make
+              better decisions.
+            </p>
           </div>
 
-          <button className="sp-nav-item" onClick={handleLogout}>
+          <button
+            className="sp-nav-item"
+            onClick={handleLogout}
+          >
             <LogOut size={18} />
             <span>Logout</span>
           </button>
         </div>
       </aside>
 
+      {/* Mobile backdrop */}
       {mobileMenu && (
-        <button className="sp-backdrop" onClick={() => setMobileMenu(false)} aria-label="Close navigation" />
+        <button
+          className="sp-backdrop"
+          onClick={() => setMobileMenu(false)}
+          aria-label="Close navigation"
+        />
       )}
 
+      {/* Main content */}
       <main className="sp-main sh-main">
+
+        {/* Topbar */}
         <header className="sp-topbar sh-topbar">
-          <button className="sp-mobile-menu" onClick={() => setMobileMenu(true)} aria-label="Open menu">
+
+          <button
+            className="sp-mobile-menu"
+            onClick={() => setMobileMenu(true)}
+            aria-label="Open menu"
+          >
             <Menu size={21} />
           </button>
 
@@ -163,18 +407,14 @@ export default function SalesHistory({ onNavigate, onLogout }) {
           </div>
 
           <div className="sp-top-actions">
-            <label className="sp-search sh-search">
-              <Search size={17} />
-              <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search sales..." />
-              {search && (
-                <button type="button" className="sh-clear-search" onClick={() => { setSearch(""); setPage(1); }}>
-                  <X size={14} />
-                </button>
-              )}
-            </label>
 
             <div className="sp-notification-wrap">
-              <button className="sp-icon-button" onClick={() => setShowNotifications((v) => !v)}>
+              <button
+                className="sp-icon-button"
+                onClick={() =>
+                  setShowNotifications((value) => !value)
+                }
+              >
                 <Bell size={19} />
                 <i>4</i>
               </button>
@@ -190,116 +430,414 @@ export default function SalesHistory({ onNavigate, onLogout }) {
 
             <div className="sp-profile">
               <div className="sp-avatar">O</div>
+
               <div>
                 <strong>Owner</strong>
                 <small>Store Owner</small>
               </div>
             </div>
+
           </div>
         </header>
 
+        {/* Notification message */}
         {notice && (
           <div className="sp-notice">
             <span>{notice}</span>
-            <button onClick={() => setNotice("")} aria-label="Dismiss message">
+
+            <button
+              onClick={() => setNotice("")}
+              aria-label="Dismiss message"
+            >
               <X size={15} />
             </button>
           </div>
         )}
 
+        {/* Sales content */}
         <section className="sh-content">
+
+          {/* Table heading and filters */}
           <div className="sh-table-heading">
+
             <div>
               <h2>All Transactions</h2>
               <p>View and track your completed sales.</p>
             </div>
-            <button className="sh-export-button" onClick={exportCSV}>
-              <Download size={15} /> Export CSV
-            </button>
+
+            <div className="sh-filters">
+
+              {/* Date filter */}
+              <div className="sh-filter-group">
+                <label>Date</label>
+
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => {
+                    setDateFilter(e.target.value);
+                    setPage(1);
+                  }}
+                />
+              </div>
+
+              {/* Order number filter */}
+              <div className="sh-filter-group">
+                <label>Order No</label>
+
+                <input
+                  type="text"
+                  placeholder="Search order no..."
+                  value={orderFilter}
+                  onChange={(e) => {
+                    setOrderFilter(e.target.value);
+                    setPage(1);
+                  }}
+                />
+              </div>
+
+              {/* Payment method filter */}
+              <div className="sh-filter-group">
+                <label>Payment Method</label>
+
+                <select
+                  value={paymentFilter}
+                  onChange={(e) => {
+                    setPaymentFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All Payments</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                </select>
+              </div>
+
+              {/* Clear filters */}
+              <button
+                type="button"
+                className="sh-clear-button"
+                onClick={clearFilters}
+              >
+                Clear
+              </button>
+
+              {/* Export CSV */}
+              <button
+                type="button"
+                className="sh-export-button"
+                onClick={exportCSV}
+                disabled={loading || sales.length === 0}
+              >
+                <Download size={15} />
+                Export
+              </button>
+
+            </div>
           </div>
 
+          {/* Sales table */}
           <div className="sh-table-container">
+
             <div className="sh-table-scroll">
+
               <table className="sh-table">
+
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Items ID</th>
+                    <th>Order No</th>
                     <th>Payment</th>
-                    <th>Items</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Details</th>
+                    <th style={{ textAlign: "right" }}>Items</th>
+                    <th style={{ textAlign: "right" }}>Amount</th>
+                    <th style={{ textAlign: "right" }}>Details</th>
                   </tr>
                 </thead>
+
                 <tbody>
-                  {visibleSales.map((sale) => (
-                    <tr key={sale.id}>
-                      <td>{sale.date}</td>
-                      <td className="sh-order-id">{sale.id}</td>
-                      <td>{sale.payment}</td>
-                      <td>{sale.items}</td>
-                      <td className="sh-amount">{formatMoney(sale.amount)}</td>
-                      <td><span className="sh-status">{sale.status}</span></td>
-                      <td>
-                        <button className="sh-view-button" onClick={() => setSelectedSale(sale)}>
-                          <Eye size={14} /> View
-                        </button>
+
+                  {/* Loading */}
+                  {loading && (
+                    <tr>
+                      <td colSpan="6" className="sh-empty">
+                        Loading sales records...
                       </td>
                     </tr>
+                  )}
+
+                  {/* Sales records */}
+              
+                  {!loading && sales.map((sale) => (
+                    
+                    <tr key={sale.order_id}>
+
+                      <td>
+                        {formatDate(sale.date)}
+                      </td>
+
+                      <td className="sh-order-id">
+                        {sale.order_no}
+                      </td>
+
+                      <td>
+                        {sale.payment_method}
+                      </td>
+
+                      <td style={{ textAlign: "right" }}>
+                        {Number(sale.item_count).toFixed(2)}
+                      </td>
+
+                      <td style={{ textAlign: "right" }}className="sh-amount">
+                        {formatMoney(sale.amount)}
+                      </td>
+
+                      <td style={{ textAlign: "right" }}>
+                        <button
+                          className="sh-view-button"
+                          onClick={() =>
+                            handleViewSale(sale.order_id)
+                          }
+                        >
+                          <Eye size={14} />
+                          View
+                        </button>
+                      </td>
+
+                    </tr>
                   ))}
-                  {visibleSales.length === 0 && (
+
+                  {/* Empty state */}
+                  {!loading && sales.length === 0 && (
                     <tr>
-                      <td colSpan="7" className="sh-empty">No sales found. Try another search.</td>
+                      <td colSpan="6" className="sh-empty">
+                        No sales found. Try another search.
+                      </td>
                     </tr>
                   )}
+
                 </tbody>
               </table>
+
             </div>
 
+            {/* Table footer */}
             <div className="sh-table-footer">
+
               <span className="sh-results">
-                Showing {filteredSales.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1}–{Math.min(currentPage * rowsPerPage, filteredSales.length)} of {filteredSales.length} transactions
+                Showing{" "}
+                {totalRecords === 0
+                  ? 0
+                  : (page - 1) * rowsPerPage + 1}
+                –
+                {Math.min(
+                  page * rowsPerPage,
+                  totalRecords
+                )}{" "}
+                of {totalRecords} transactions
               </span>
 
               <div className="sh-pagination">
-                <button disabled={currentPage === 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>
+
+                <button
+                  disabled={page === 1 || loading}
+                  onClick={() =>
+                    setPage((value) => Math.max(1, value - 1))
+                  }
+                >
                   <ChevronLeft size={16} />
                 </button>
-                <button disabled={currentPage === totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>
+
+                <span>
+                  {page} / {totalPages}
+                </span>
+
+                <button
+                  disabled={page >= totalPages || loading}
+                  onClick={() =>
+                    setPage((value) =>
+                      Math.min(totalPages, value + 1)
+                    )
+                  }
+                >
                   <ChevronRight size={16} />
                 </button>
+
               </div>
             </div>
+
           </div>
 
           <div className="sh-bottom-note">
-            
-            <span>© Smart POS · FoodCity Smart POS System</span>
+            <span>
+              © Smart POS · FoodCity Smart POS System
+            </span>
           </div>
+
         </section>
       </main>
 
-      {selectedSale && (
-        <div className="sh-modal-backdrop" onClick={() => setSelectedSale(null)}>
-          <section className="sh-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="sh-modal-heading">
-              <div>
-                <h2>Transaction Details</h2>
-                <p>{selectedSale.id}</p>
+      {/* Transaction details modal */}
+      {(selectedSale || detailLoading) && (
+        <div
+          className="sh-modal-backdrop"
+          onClick={() => {
+            if (!detailLoading) {
+              setSelectedSale(null);
+            }
+          }}
+        >
+
+          <section
+            className="sh-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+
+            {detailLoading ? (
+              <div className="sh-empty">
+                Loading transaction details...
               </div>
-              <button onClick={() => setSelectedSale(null)}><X size={19} /></button>
-            </div>
-            <div className="sh-detail-row"><span>Date</span><strong>{selectedSale.date}</strong></div>
-            <div className="sh-detail-row"><span>Order ID</span><strong>{selectedSale.id}</strong></div>
-            <div className="sh-detail-row"><span>Payment method</span><strong>{selectedSale.payment}</strong></div>
-            <div className="sh-detail-row"><span>Number of items</span><strong>{selectedSale.items}</strong></div>
-            <div className="sh-detail-row"><span>Status</span><strong className="sh-modal-completed">{selectedSale.status}</strong></div>
-            <div className="sh-detail-total"><span>Total amount</span><strong>{formatMoney(selectedSale.amount)}</strong></div>
-            <button className="sh-close-details" onClick={() => setSelectedSale(null)}>Close</button>
+            ) : (
+              <>
+                {/* Modal heading */}
+                <div className="sh-modal-heading">
+
+                  <div>
+                    <h2>Transaction Details</h2>
+                    <p>{selectedSale.order_no}</p>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedSale(null)}
+                  >
+                    <X size={19} />
+                  </button>
+
+                </div>
+
+                {/* Order information */}
+                <div className="sh-detail-row">
+                  <span>Date</span>
+                  <strong>
+                    {formatDate(selectedSale.date)}
+                  </strong>
+                </div>
+
+                <div className="sh-detail-row">
+                  <span>Order No</span>
+                  <strong>{selectedSale.order_no}</strong>
+                </div>
+
+                <div className="sh-detail-row">
+                  <span>Payment Method</span>
+                  <strong>
+                    {selectedSale.payment_method}
+                  </strong>
+                </div>
+
+                {/* Ordered items */}
+                <div className="sh-order-items">
+
+                  <h3>Ordered Items</h3>
+
+                  <div className="sh-table-scroll">
+                    <table className="sh-table">
+
+                      <thead>
+                        <tr>
+                          <th>Item</th>
+                          <th style={{ textAlign: "right" }}>Qty</th>
+                          <th style={{ textAlign: "right" }}>Unit Price</th>
+                          <th style={{ textAlign: "right" }}>Amount</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+
+                        {selectedSale.items &&
+                          selectedSale.items.map((item) => (
+                            <tr key={item.order_detail_id}>
+
+                              <td>
+                                {item.item_name}
+                              </td>
+
+                              <td style={{ textAlign: "right" }}>
+                                {Number(item.quantity).toFixed(2)}
+                                </td>
+
+                              <td style={{ textAlign: "right" }}>
+                                {formatMoney(item.unit_price)}
+                              </td>
+
+                              <td style={{ textAlign: "right" }} className="sh-amount">
+                                {formatMoney(item.amount)}
+                              </td>
+
+                            </tr>
+                          ))}
+
+                        {(!selectedSale.items ||
+                          selectedSale.items.length === 0) && (
+                          <tr>
+                            <td colSpan="4" className="sh-empty">
+                              No items found.
+                            </td>
+                          </tr>
+                        )}
+
+                      </tbody>
+
+                    </table>
+                  </div>
+
+                </div>
+
+                {/* Amount summary */}
+                <div className="sh-detail-row">
+                  <span>Subtotal</span>
+                  <strong>
+                    {formatMoney(
+                      Number(selectedSale.amount || 0) +
+                      Number(selectedSale.discount_price || 0)
+                    )}
+                  </strong>
+                </div>
+
+                <div className="sh-detail-row">
+                  <span>Discount</span>
+                  <strong>
+                    {formatMoney(selectedSale.discount_price)}
+                  </strong>
+                </div>
+                <div className="sh-detail-total">
+                  <span>Received Amount</span>
+                  <strong>
+                    {formatMoney(selectedSale.amount_paid)}
+                  </strong>
+                </div>
+
+                <div className="sh-detail-total">
+                  <span>Total Amount</span>
+                  <strong>
+                    {formatMoney(selectedSale.amount)}
+                  </strong>
+                </div>
+                
+                <div className="sh-detail-total">
+                  <span>Balance Amount</span>
+                  <strong>
+                    {formatMoney(selectedSale.change_amount)}
+                  </strong>
+                </div>
+
+              </>
+            )}
+
           </section>
+
         </div>
       )}
+
     </div>
   );
 }

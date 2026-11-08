@@ -82,7 +82,7 @@ const menuItems = [
   { label: "Products Management", page: "products", icon: Package },
   { label: "Inventory", page: "inventory", icon: Warehouse },
   { label: "Suppliers Management", page: "suppliers", icon: Truck },
-  { label: "Purchase Orders", page: "purchase-orders", icon: ClipboardList },
+  { label: "Purchase Orders", page: "purchase_orders", icon: ClipboardList },
   { label: "Customer Management", page: "customers", icon: Users },
   { label: "Sales History", page: "sales-history", icon: History },
   { label: "Reports", page: "reports", icon: ChartNoAxesCombined },
@@ -439,7 +439,7 @@ export default function PurchaseOrder({
 
         {/* MAIN CONTENT */}
         <main className="supplier-main purchase-main">
-  <header className="supplier-topbar purchase-topbar">
+<header className="supplier-topbar purchase-topbar">
 
     <button
       type="button"
@@ -449,9 +449,9 @@ export default function PurchaseOrder({
     >
       <Menu size={21} />
     </button>
-
+    <div className="sp-page-heading sh-heading">
     <h1>Purchase Orders</h1>
-
+     </div>
             <div className="global-search purchase-global-search">
               <input
                 aria-label="Search purchase orders"
@@ -461,7 +461,7 @@ export default function PurchaseOrder({
               />
               <span>⌕</span>
             </div>
-
+           
             <div className="purchase-notification-wrap">
               <button
                 type="button"

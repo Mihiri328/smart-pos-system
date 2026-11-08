@@ -76,7 +76,7 @@ export default function Dashboard({ onNavigate, onLogout }) {
     { label: "Products Management", icon: Package, page: "products" },
     { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
     { label: "Suppliers Management", icon: Truck, page: "suppliers" },
-    { label: "Purchase Orders", icon: ClipboardList, page: "purchase-orders" },
+    { label: "Purchase Orders", icon: ClipboardList, page: "purchase_orders" },
     { label: "Customer Management", icon: Users, page: "customers" },
     { label: "Sales History", icon: History, page: "sales_history" },
     { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
@@ -229,7 +229,6 @@ export default function Dashboard({ onNavigate, onLogout }) {
                 {expiringProducts.map((p) => <tr key={p.name}><td>{p.name}</td><td>{p.stock}</td><td><span className="sp-date-warning">{shortDate(p.expiry)}</span></td></tr>)}
               </tbody></table>
             </div>
-            <p className="sp-footnote"><AlertTriangle size={13}/> Demo expiry data — replace with database values.</p>
           </article>
         </section>
 

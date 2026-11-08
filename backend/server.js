@@ -8,6 +8,9 @@ const { rateLimit } = require("express-rate-limit");
 
 const db = require("./src/config/database");
 const authRoutes = require("./src/routes/authRoutes");
+const salesRoutes = require("./src/routes/salesRoutes");
+const itemRoutes = require("./src/routes/itemRoutes");
+const orderRoutes = require("./src/routes/orderRoutes");
 
 const app = express();
 
@@ -29,6 +32,7 @@ console.log("Starting Smart POS backend...");
 
 // Security headers
 app.use(helmet());
+
 
 // Frontend-to-backend communication
 app.use(
@@ -93,6 +97,9 @@ app.use("/api/auth/forgot-password", resetRequestLimiter);
 
 // Authentication routes
 app.use("/api/auth", authRoutes);
+app.use("/api/sales", salesRoutes);
+app.use("/api/items", itemRoutes);
+app.use("/api/orders", orderRoutes)
 
 // Handle unknown endpoints
 app.use((req, res) => {

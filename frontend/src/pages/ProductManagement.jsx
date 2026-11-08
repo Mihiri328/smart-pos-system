@@ -16,19 +16,143 @@ import {
   Menu,
   X,
   AlertCircle,
+
+  // Statistics Icons
+  PackageCheck,
+  AlertTriangle,
+  PackageX,
+  TrendingUp,
+
+
+  Pencil,
+Trash2,
+MoreHorizontal,
 } from "lucide-react";
 
+
+import sambaRice from "../img/rice.png";
+import freshMilk from "../img/freshMilk500ml.png";
+import whiteSugar from "../img/sugar.png";
+import cookingOil from "../img/oil.png";
+import teaBags from "../img/tea.png";
+import primaNoodles from "../img/nudles.png";
+import salt from "../img/salt.png";
+import surfExcel from "../img/surtexcel.png";
+import marieBiscuits from "../img/biscuit.png";
+import milk500mlImage from "../img/milk.png";
+
 const initialProducts = [
-  { id: 1, name: "Samba Rice (1kg)", sku: "PRD001", category: "Grains & Rice", unit: "Pack", price: 220, stock: 50, status: "In Stock" },
-  { id: 2, name: "Kothmale fresh milk", sku: "PRD002", category: "Dairy Products", unit: "Bottle", price: 450, stock: 40, status: "Low Stock" },
-  { id: 3, name: "White Sugar", sku: "PRD003", category: "Grains & Rice", unit: "Kg", price: 280, stock: 100, status: "In Stock" },
-  { id: 4, name: "Cooking oil (1L)", sku: "PRD004", category: "Dairy Products", unit: "Bottle", price: 650, stock: 10, status: "Low Stock" },
-  { id: 5, name: "Tea Bags (200g)", sku: "PRD005", category: "Dairy Products", unit: "Pack", price: 550, stock: 200, status: "In Stock" },
-  { id: 6, name: "Prima Noodles", sku: "PRD006", category: "Snacks", unit: "Pack", price: 120, stock: 0, status: "Out of Stock" },
-  { id: 7, name: "Salt (400g)", sku: "PRD007", category: "Spices & Masala", unit: "Pack", price: 100, stock: 120, status: "In Stock" },
-  { id: 8, name: "Surf Excel (500g)", sku: "PRD008", category: "Cleaning Items", unit: "Pack", price: 390, stock: 87, status: "Low Stock" },
-  { id: 9, name: "Marie Biscuits", sku: "PRD009", category: "Snacks", unit: "Pack", price: 150, stock: 75, status: "In Stock" },
-  { id: 10, name: "Fresh Milk 500ml", sku: "PRD010", category: "Dairy Products", unit: "Bottle", price: 280, stock: 5, status: "Low Stock" },
+  {
+    id: 1,
+    name: "Samba Rice (1kg)",
+    sku: "PRD001",
+    category: "Grains & Rice",
+    unit: "Pack",
+    price: 220,
+    stock: 50,
+    status: "In Stock",
+    image: sambaRice,
+  },
+  {
+    id: 2,
+    name: "Kothmale fresh milk",
+    sku: "PRD002",
+    category: "Dairy Products",
+    unit: "Bottle",
+    price: 450,
+    stock: 40,
+    status: "Low Stock",
+    image: freshMilk,
+  },
+  {
+    id: 3,
+    name: "White Sugar",
+    sku: "PRD003",
+    category: "Grains & Rice",
+    unit: "Kg",
+    price: 280,
+    stock: 100,
+    status: "In Stock",
+    image: whiteSugar,
+  },
+  {
+    id: 4,
+    name: "Cooking oil (1L)",
+    sku: "PRD004",
+    category: "Dairy Products",
+    unit: "Bottle",
+    price: 650,
+    stock: 10,
+    status: "Low Stock",
+    image: cookingOil,
+  },
+  {
+    id: 5,
+    name: "Tea Bags (200g)",
+    sku: "PRD005",
+    category: "Dairy Products",
+    unit: "Pack",
+    price: 550,
+    stock: 200,
+    status: "In Stock",
+    image: teaBags,
+  },
+  {
+    id: 6,
+    name: "Prima Noodles",
+    sku: "PRD006",
+    category: "Snacks",
+    unit: "Pack",
+    price: 120,
+    stock: 0,
+    status: "Out of Stock",
+    image: primaNoodles,
+  },
+  {
+    id: 7,
+    name: "Salt (400g)",
+    sku: "PRD007",
+    category: "Spices & Masala",
+    unit: "Pack",
+    price: 100,
+    stock: 120,
+    status: "In Stock",
+    image: salt,
+  },
+  {
+    id: 8,
+    name: "Surf Excel (500g)",
+    sku: "PRD008",
+    category: "Cleaning Items",
+    unit: "Pack",
+    price: 390,
+    stock: 87,
+    status: "Low Stock",
+    image: surfExcel,
+  },
+  {
+    id: 9,
+    name: "Marie Biscuits",
+    sku: "PRD009",
+    category: "Snacks",
+    unit: "Pack",
+    price: 150,
+    stock: 75,
+    status: "In Stock",
+    image: marieBiscuits,
+  },
+  { id: 10, 
+    name: "Fresh Milk 500ml",
+     sku: "PRD010", 
+     category: "Dairy Products", 
+     unit: "Bottle", 
+     price: 280, 
+     stock: 5, 
+     status: "Low Stock",
+     image: milk500mlImage,
+     
+    
+  },
 ];
 
 const initialCategories = [
@@ -49,7 +173,7 @@ const navigation = [
   { label: "Products Management", icon: Package, page: "products" },
   { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
   { label: "Suppliers Management", icon: Truck, page: "suppliers" },
-  { label: "Purchase Orders", icon: ClipboardList, page: "purchase-orders" },
+  { label: "Purchase Orders", icon: ClipboardList, page: "purchase_orders" },
   { label: "Customer Management", icon: Users, page: "customers" },
   { label: "Sales History", icon: History, page: "sales_history" },
   { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
@@ -504,49 +628,65 @@ export default function ProductManagement({ onNavigate, onLogout }) {
         </header>
 
         {/* Statistics */}
-        <section className="pm-stats">
-          <div className="pm-stat-card">
-            <div className="pm-stat-icon blue">▤</div>
-            <div className="pm-stat-content">
-              <strong>Today’s Sales</strong>
-              <h2>236</h2>
-              <p>
-                <span className="green-text">12</span> New this month
-              </p>
-            </div>
-          </div>
+<section className="pm-stats">
 
-          <div className="pm-stat-card">
-            <div className="pm-stat-icon green">✓</div>
-            <div className="pm-stat-content">
-              <strong>Action Products</strong>
-              <h2>{products.length}</h2>
-              <p>
-                <span className="green-text">14%</span> of total
-              </p>
-            </div>
-          </div>
+  {/* Today's Sales */}
+  <div className="pm-stat-card">
+    <div className="pm-stat-icon blue">
+      <TrendingUp size={22} />
+    </div>
 
-          <div className="pm-stat-card">
-            <div className="pm-stat-icon orange">▰</div>
-            <div className="pm-stat-content">
-              <strong>Low Stock Items</strong>
-              <h2>{lowStockCount}</h2>
-              <p className="orange-text">Need Attention</p>
-            </div>
-          </div>
+    <div className="pm-stat-content">
+      <strong>Today’s Sales</strong>
+      <h2>236</h2>
+      <p>
+        <span className="green-text">12</span> New this month
+      </p>
+    </div>
+  </div>
 
-          <div className="pm-stat-card pm-stat-out">
-            <div className="pm-stat-icon red">▦</div>
-            <div className="pm-stat-content">
-              <strong>Out of Stock</strong>
-              <h2>{outOfStockCount}</h2>
-              <p className="red-text">Urgent restock</p>
-            </div>
+  {/* Action Products */}
+  <div className="pm-stat-card">
+    <div className="pm-stat-icon green">
+      <PackageCheck size={22} />
+    </div>
 
-            
-          </div>
-        </section>
+    <div className="pm-stat-content">
+      <strong>Action Products</strong>
+      <h2>{products.length}</h2>
+      <p>
+        <span className="green-text">14%</span> of total
+      </p>
+    </div>
+  </div>
+
+  {/* Low Stock Items */}
+  <div className="pm-stat-card">
+    <div className="pm-stat-icon orange">
+      <AlertTriangle size={22} />
+    </div>
+
+    <div className="pm-stat-content">
+      <strong>Low Stock Items</strong>
+      <h2>{lowStockCount}</h2>
+      <p className="orange-text">Need Attention</p>
+    </div>
+  </div>
+
+  {/* Out of Stock */}
+  <div className="pm-stat-card pm-stat-out">
+    <div className="pm-stat-icon red">
+      <PackageX size={22} />
+    </div>
+
+    <div className="pm-stat-content">
+      <strong>Out of Stock</strong>
+      <h2>{outOfStockCount}</h2>
+      <p className="red-text">Urgent restock</p>
+    </div>
+  </div>
+
+</section>
 
         {/* Product Workspace */}
         <section className="pm-workspace">
@@ -738,19 +878,7 @@ export default function ProductManagement({ onNavigate, onLogout }) {
               <table className="pm-table">
                 <thead>
                   <tr>
-                    <th className="pm-check-cell">
-                      <input
-                        type="checkbox"
-                        aria-label="Select all visible products"
-                        checked={
-                          visibleProducts.length > 0 &&
-                          visibleProducts.every((product) =>
-                            selectedIds.includes(product.id)
-                          )
-                        }
-                        onChange={toggleAllVisible}
-                      />
-                    </th>
+                    
                     <th>Products</th>
                     <th>SKU</th>
                     <th>Category</th>
@@ -765,14 +893,16 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                 <tbody>
                   {visibleProducts.map((product) => (
                     <tr key={product.id}>
-                      <td className="pm-check-cell">
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${product.name}`}
-                          checked={selectedIds.includes(product.id)}
-                          onChange={() => toggleProduct(product.id)}
-                        />
-                      </td>
+                      <td className="pm-product-cell">
+  <div className="pm-product-info">
+    <img
+      src={product.image}
+      alt={product.name}
+      className="pm-product-image"
+    />
+    <span className="pm-product-name">{product.name}</span>
+  </div>
+</td>
 
                       <td className="pm-product-name">{product.name}</td>
                       <td className="pm-small-cell">{product.sku}</td>
@@ -807,38 +937,43 @@ export default function ProductManagement({ onNavigate, onLogout }) {
                         </span>
                       </td>
 
-                      <td>
-                        <div className="pm-row-actions">
-                          <button
-                            type="button"
-                            className="pm-action-btn edit"
-                            title="Edit product"
-                            aria-label={`Edit ${product.name}`}
-                            onClick={() => openEditModal(product)}
-                          >
-                            ✎
-                          </button>
+                       <td>
+  <div className="pm-row-actions">
 
-                          <button
-                            type="button"
-                            className="pm-action-btn delete"
-                            title="Delete product"
-                            aria-label={`Delete ${product.name}`}
-                            onClick={() => handleDelete(product)}
-                          >
-                            ▣
-                          </button>
+    {/* Edit Product */}
+    <button
+      type="button"
+      className="pm-action-btn edit"
+      title="Edit product"
+      aria-label={`Edit ${product.name}`}
+      onClick={() => openEditModal(product)}
+    >
+      <Pencil size={17} />
+    </button>
 
-                          <button
-                            type="button"
-                            className="pm-action-btn more"
-                            title="More options"
-                            onClick={() => openEditModal(product)}
-                          >
-                            •••
-                          </button>
-                        </div>
-                      </td>
+    {/* Delete Product */}
+    <button
+      type="button"
+      className="pm-action-btn delete"
+      title="Delete product"
+      aria-label={`Delete ${product.name}`}
+      onClick={() => handleDelete(product)}
+    >
+      <Trash2 size={17} />
+    </button>
+
+    {/* More Options */}
+    <button
+      type="button"
+      className="pm-action-btn more"
+      title="More options"
+      onClick={() => openEditModal(product)}
+    >
+      <MoreHorizontal size={19} />
+    </button>
+
+  </div>
+</td>
                     </tr>
                   ))}
 

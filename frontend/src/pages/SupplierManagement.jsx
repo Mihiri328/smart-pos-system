@@ -293,9 +293,9 @@ export default function SupplierManagement({
           >
             <Menu size={21} />
           </button>
-
+          <div className="sp-page-heading sh-heading">
           <h1>Supplier Management</h1>
-
+          </div>
           <div className="global-search">
             <input
               aria-label="Search suppliers"
@@ -308,7 +308,7 @@ export default function SupplierManagement({
             />
             <Search size={19} />
           </div>
-
+          
           <button
             type="button"
             className="notification"

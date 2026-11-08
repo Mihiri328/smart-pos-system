@@ -147,7 +147,7 @@ button, input { font: inherit; }
 
 /* ==================== GLOBAL APP LAYOUT & UNIFIED SIDEBAR ==================== */
 
-.sp-dashboard, .billing-app, .sh-page , .supplier-app {
+.sp-dashboard, .billing-app, .sh-page , .supplier-app , .purchase-app {
   --navy: #09234b;
   --blue: #4968f5;
   --ink: #172033;
@@ -3442,13 +3442,7 @@ button, input { font: inherit; }
   margin-bottom: 26px;
 }
 
-.supplier-app .supplier-topbar h1 {
-  margin: 0;
-  color: #1e293b;
-  font-size: 21px;
-  font-weight: 700;
-  white-space: nowrap;
-}
+
 
 .supplier-app .sp-mobile-menu {
   display: none;
@@ -4340,15 +4334,7 @@ button, input { font: inherit; }
 /* =========================================
    PURCHASE ORDER PAGE CSS
 
-.purchase-app .purchase-page {
-  width: 100%;
-  min-width: 0;
-  padding: 20px 20px 30px;
-  box-sizing: border-box;
-  background: transparent;
-  color: #080808;
-  font-family: Arial, Helvetica, sans-serif;
-}
+
 
 .purchase-app .purchase-page *,
 .purchase-app .purchase-page *::before,

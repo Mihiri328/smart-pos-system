@@ -45,7 +45,7 @@ const navItems = [
 
 // Format currency
 const formatMoney = (amount) =>
-  `Rs. ${Number(amount || 0).toLocaleString("en-LK", {
+  `${Number(amount || 0).toLocaleString("en-LK", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })}`;
@@ -54,14 +54,26 @@ const formatMoney = (amount) =>
 const formatDate = (dateValue) => {
   if (!dateValue) return "-";
 
-  const dateString =
-    typeof dateValue === "string"
-      ? dateValue.substring(0, 10)
-      : new Date(dateValue).toISOString().substring(0, 10);
+  let year, month, day;
 
-  const [year, month, day] = dateString.split("-");
+  if (typeof dateValue === "string") {
+    // Handle YYYY-MM-DD and YYYY/MM/DD
+    const match = dateValue.trim().match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
 
-  if (!year || !month || !day) return dateString;
+    if (match) {
+      [, year, month, day] = match;
+    } else {
+      return dateValue;
+    }
+  } else {
+    const date = new Date(dateValue);
+
+    if (isNaN(date.getTime())) return "-";
+
+    year = date.getFullYear();
+    month = String(date.getMonth() + 1).padStart(2, "0");
+    day = String(date.getDate()).padStart(2, "0");
+  }
 
   return `${day}/${month}/${year}`;
 };
@@ -536,9 +548,9 @@ export default function SalesHistory({ onNavigate, onLogout }) {
                     <th>Date</th>
                     <th>Order No</th>
                     <th>Payment</th>
-                    <th>Items</th>
-                    <th>Amount</th>
-                    <th>Details</th>
+                    <th style={{ textAlign: "right" }}>Items</th>
+                    <th style={{ textAlign: "right" }}>Amount</th>
+                    <th style={{ textAlign: "right" }}>Details</th>
                   </tr>
                 </thead>
 
@@ -554,7 +566,9 @@ export default function SalesHistory({ onNavigate, onLogout }) {
                   )}
 
                   {/* Sales records */}
+              
                   {!loading && sales.map((sale) => (
+                    
                     <tr key={sale.order_id}>
 
                       <td>
@@ -569,15 +583,15 @@ export default function SalesHistory({ onNavigate, onLogout }) {
                         {sale.payment_method}
                       </td>
 
-                      <td>
-                        {sale.item_count}
+                      <td style={{ textAlign: "right" }}>
+                        {Number(sale.item_count).toFixed(2)}
                       </td>
 
-                      <td className="sh-amount">
+                      <td style={{ textAlign: "right" }}className="sh-amount">
                         {formatMoney(sale.amount)}
                       </td>
 
-                      <td>
+                      <td style={{ textAlign: "right" }}>
                         <button
                           className="sh-view-button"
                           onClick={() =>
@@ -731,9 +745,9 @@ export default function SalesHistory({ onNavigate, onLogout }) {
                       <thead>
                         <tr>
                           <th>Item</th>
-                          <th>Qty</th>
-                          <th>Unit Price</th>
-                          <th>Amount</th>
+                          <th style={{ textAlign: "right" }}>Qty</th>
+                          <th style={{ textAlign: "right" }}>Unit Price</th>
+                          <th style={{ textAlign: "right" }}>Amount</th>
                         </tr>
                       </thead>
 
@@ -747,15 +761,15 @@ export default function SalesHistory({ onNavigate, onLogout }) {
                                 {item.item_name}
                               </td>
 
-                              <td>
-                                {item.quantity}
-                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                {Number(item.quantity).toFixed(2)}
+                                </td>
 
-                              <td>
+                              <td style={{ textAlign: "right" }}>
                                 {formatMoney(item.unit_price)}
                               </td>
 
-                              <td className="sh-amount">
+                              <td style={{ textAlign: "right" }} className="sh-amount">
                                 {formatMoney(item.amount)}
                               </td>
 
@@ -795,6 +809,12 @@ export default function SalesHistory({ onNavigate, onLogout }) {
                     {formatMoney(selectedSale.discount_price)}
                   </strong>
                 </div>
+                <div className="sh-detail-total">
+                  <span>Received Amount</span>
+                  <strong>
+                    {formatMoney(selectedSale.amount_paid)}
+                  </strong>
+                </div>
 
                 <div className="sh-detail-total">
                   <span>Total Amount</span>
@@ -802,13 +822,13 @@ export default function SalesHistory({ onNavigate, onLogout }) {
                     {formatMoney(selectedSale.amount)}
                   </strong>
                 </div>
-
-                <button
-                  className="sh-close-details"
-                  onClick={() => setSelectedSale(null)}
-                >
-                  Close
-                </button>
+                
+                <div className="sh-detail-total">
+                  <span>Balance Amount</span>
+                  <strong>
+                    {formatMoney(selectedSale.change_amount)}
+                  </strong>
+                </div>
 
               </>
             )}

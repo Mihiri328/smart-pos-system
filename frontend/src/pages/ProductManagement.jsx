@@ -30,16 +30,16 @@ MoreHorizontal,
 } from "lucide-react";
 
 
-import sambaRice from "../img/sambaHal.png";
-import freshMilk from "../img/kothmale Milk.png";
+import sambaRice from "../img/rice.png";
+import freshMilk from "../img/freshMilk500ml.png";
 import whiteSugar from "../img/sugar.png";
-import cookingOil from "../img/cooking oil 1L.png";
+import cookingOil from "../img/oil.png";
 import teaBags from "../img/tea.png";
 import primaNoodles from "../img/nudles.png";
 import salt from "../img/salt.png";
 import surfExcel from "../img/surtexcel.png";
-import marieBiscuits from "../img/marie.png";
-import milk500mlImage from "../img/Milk500ml.png";
+import marieBiscuits from "../img/biscuit.png";
+import milk500mlImage from "../img/milk.png";
 
 const initialProducts = [
   {

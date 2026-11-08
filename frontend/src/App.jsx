@@ -56,7 +56,7 @@ function App() {
     sales_history: <SalesHistory {...pageProps} />,
     reports: <Reports {...pageProps} />,
     settings: <Settings {...pageProps} />,
-    "Purchase Orders": <PurchaseOrder {...pageProps} />,
+    purchase_orders: <PurchaseOrder {...pageProps} />,
   };
 
   // Main navigation
@@ -70,7 +70,7 @@ function App() {
     ["sales_history", "Sales History"],
     ["reports", "Reports"],
     ["settings", "Settings"],
-    ["Purchase Orders", "Purchase Orders"],
+    ["purchase_orders", "Purchase Orders"],
   ];
 
   return (

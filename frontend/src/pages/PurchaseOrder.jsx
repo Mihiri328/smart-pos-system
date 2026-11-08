@@ -82,7 +82,7 @@ const menuItems = [
   { label: "Products Management", page: "products", icon: Package },
   { label: "Inventory", page: "inventory", icon: Warehouse },
   { label: "Suppliers Management", page: "suppliers", icon: Truck },
-  { label: "Purchase Orders", page: "purchase-orders", icon: ClipboardList },
+  { label: "Purchase Orders", page: "purchase_orders", icon: ClipboardList },
   { label: "Customer Management", page: "customers", icon: Users },
   { label: "Sales History", page: "sales-history", icon: History },
   { label: "Reports", page: "reports", icon: ChartNoAxesCombined },

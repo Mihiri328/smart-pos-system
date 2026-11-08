@@ -16,7 +16,7 @@ const navigation = [
   { label: "Products Management", icon: Package, page: "products" },
   { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
   { label: "Suppliers Management", icon: Truck, page: "suppliers" },
-  { label: "Purchase Orders", icon: ClipboardList, page: "Purchase Orders" },
+   { label: "Purchase Orders", page: "purchase_orders", icon: ClipboardList },
   { label: "Customer Management", icon: Users, page: "customers" },
   { label: "Sales History", icon: History, page: "sales_history" },
   { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },

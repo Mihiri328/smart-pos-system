@@ -74,16 +74,16 @@ const resolveProductImage = (imagePath) => {
 // ======================================
 
 const navigation = [
-    { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
-    { label: "POS Billing", icon: ShoppingCart, page: "billing" },
-    { label: "Products Management", icon: Package, page: "products" },
-    { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
-    { label: "Suppliers Management", icon: Truck, page: "suppliers" },
-    { label: "Purchase Orders", icon: ClipboardList, page: "purchase-orders" },
-    { label: "Customer Management", icon: Users, page: "customers" },
-    { label: "Sales History", icon: History, page: "sales_history" },
-    { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
-    { label: "Settings", icon: Settings, page: "settings" }
+  { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
+  { label: "POS Billing", icon: ShoppingCart, page: "billing" },
+  { label: "Products Management", icon: Package, page: "products" },
+  { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
+  { label: "Suppliers Management", icon: Truck, page: "suppliers" },
+  { label: "Purchase Orders", page: "purchase_orders", icon: ClipboardList },
+  { label: "Customer Management", icon: Users, page: "customers" },
+  { label: "Sales History", icon: History, page: "sales_history" },
+  { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
+  { label: "Settings", icon: Settings, page: "settings" }
 ];
 
 

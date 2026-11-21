@@ -11,7 +11,7 @@ const authRoutes = require("./src/routes/authRoutes");
 const salesRoutes = require("./src/routes/salesRoutes");
 const itemRoutes = require("./src/routes/itemRoutes");
 const orderRoutes = require("./src/routes/orderRoutes");
-
+const dashboardRoutes = require("./src/routes/dashboardRoutes");
 const app = express();
 
 const PORT = Number(process.env.PORT || 5000);
@@ -99,7 +99,9 @@ app.use("/api/auth/forgot-password", resetRequestLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/items", itemRoutes);
-app.use("/api/orders", orderRoutes)
+app.use("/api/orders", orderRoutes);
+
+app.use("/api/dashboard", dashboardRoutes);
 
 // Handle unknown endpoints
 app.use((req, res) => {

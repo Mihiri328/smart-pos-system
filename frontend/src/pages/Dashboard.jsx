@@ -1,280 +1,1240 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import logo from "../img/black logo.png";
+
 import {
-  ShoppingCart, LayoutDashboard, Package, Warehouse, Truck, ClipboardList,
-  Users, History, ChartNoAxesCombined, Settings, LogOut, Search, Bell,
-  CalendarDays, AlertTriangle, BrainCircuit, ArrowUpRight, ChevronDown,
-  CircleDollarSign, CreditCard, Banknote, QrCode, Eye, Menu, X
+    ShoppingCart,
+    LayoutDashboard,
+    Package,
+    Warehouse,
+    Truck,
+    ClipboardList,
+    Users,
+    History,
+    ChartNoAxesCombined,
+    Settings,
+    LogOut,
+    Search,
+    Bell,
+    CalendarDays,
+    AlertTriangle,
+    ArrowUpRight,
+    CircleDollarSign,
+    CreditCard,
+    Banknote,
+    QrCode,
+    Menu,
+    X
 } from "lucide-react";
 
-const salesByDay = [
-  { day: "Mon", amount: 20 }, { day: "Tue", amount: 30 },
-  { day: "Wed", amount: 40 }, { day: "Thu", amount: 49 },
-  { day: "Fri", amount: 40 }, { day: "Sat", amount: 43 },
-  { day: "Sun", amount: 29 }
-];
+import {
+    getDashboard,
+    getSalesPerformance,
+    markPurchaseOrderReceived
+} from "../services/dashboardService";
 
-const initialLowStock = [
-  { name: "Milk (1L)", stock: 5, level: "Critical" },
-  { name: "Cooking Oil (1L)", stock: 3, level: "Critical" },
-  { name: "Tea (250g)", stock: 4, level: "Critical" },
-  { name: "Salt (1kg)", stock: 6, level: "Warning" },
-  { name: "Coffee (50g)", stock: 7, level: "Warning" }
-];
 
-const expiringProducts = [
-  { name: "Milk (1L)", stock: 5, expiry: "2026-11-02" },
-  { name: "Yogurt Cup", stock: 12, expiry: "2026-11-04" },
-  { name: "Bread (450g)", stock: 8, expiry: "2026-11-05" },
-  { name: "Cheese (200g)", stock: 6, expiry: "2026-11-08" },
-  { name: "Juice (1L)", stock: 9, expiry: "2026-11-10" }
-];
+// ==============================
+// HELPER FUNCTIONS
+// ==============================
 
-const initialRecommendations = [
-  { name: "Milk (1L)", stock: 5, demand: 150, order: 145 },
-  { name: "Cooking Oil (1L)", stock: 3, demand: 80, order: 77 },
-  { name: "Tea (250g)", stock: 4, demand: 80, order: 76 },
-  { name: "Salt (1kg)", stock: 6, demand: 60, order: 54 },
-  { name: "Coffee (50g)", stock: 7, demand: 70, order: 63 }
-];
+const money = (n) =>
+    `Rs. ${Number(n || 0).toLocaleString("en-LK", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    })}`;
 
-const initialSales = [
-  { date: "2026-10-27", id: "POS-10234", amount: 500, method: "Cash", items: 4, status: "Completed" },
-  { date: "2026-10-27", id: "POS-10233", amount: 2500, method: "Card", items: 8, status: "Completed" },
-  { date: "2026-10-26", id: "POS-10232", amount: 1500, method: "QR Pay", items: 5, status: "Completed" },
-  { date: "2026-10-26", id: "POS-10231", amount: 5300, method: "Cash", items: 12, status: "Completed" }
-];
 
-const initialOrders = [
-  { id: "PO-0081", supplier: "Lanka Distributors", items: 12, date: "2026-10-26", status: "Pending" },
-  { id: "PO-0080", supplier: "Fresh Foods Ltd", items: 8, date: "2026-10-25", status: "Received" },
-  { id: "PO-0079", supplier: "City Wholesale", items: 15, date: "2026-10-24", status: "Pending" }
-];
+const shortDate = (value) => {
+    if (!value) return "-";
 
-const money = (n) => `Rs. ${Number(n).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const shortDate = (value) => new Date(`${value}T00:00:00`).toLocaleDateString("en-GB");
+    const date =
+        typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+            ? new Date(`${value}T00:00:00`)
+            : new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "-";
+
+    return date.toLocaleDateString("en-GB");
+};
+
+
+// ==============================
+// DASHBOARD COMPONENT
+// ==============================
 
 export default function Dashboard({ onNavigate, onLogout }) {
-  const [period, setPeriod] = useState("Weekly");
-  const [search, setSearch] = useState("");
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const [salesFilter, setSalesFilter] = useState("All");
-  const [sales] = useState(initialSales);
-  const [orders, setOrders] = useState(initialOrders);
-  const [notice, setNotice] = useState("");
 
-  const filteredSales = useMemo(() => sales.filter((sale) => {
-    const matchesSearch = `${sale.id} ${sale.method} ${sale.date}`.toLowerCase().includes(search.toLowerCase());
-    const matchesMethod = salesFilter === "All" || sale.method === salesFilter;
-    return matchesSearch && matchesMethod;
-  }), [sales, search, salesFilter]);
+    // ==============================
+    // STATES
+    // ==============================
 
-  const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
-    { label: "POS Billing", icon: ShoppingCart, page: "billing" },
-    { label: "Products Management", icon: Package, page: "products" },
-    { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
-    { label: "Suppliers Management", icon: Truck, page: "suppliers" },
-    { label: "Purchase Orders", icon: ClipboardList, page: "purchase_orders" },
-    { label: "Customer Management", icon: Users, page: "customers" },
-    { label: "Sales History", icon: History, page: "sales_history" },
-    { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
-    { label: "Settings", icon: Settings, page: "settings" }
-  ];
+    const [period, setPeriod] = useState("Weekly");
+    const [search, setSearch] = useState("");
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [mobileMenu, setMobileMenu] = useState(false);
 
-  function chooseNav(pageKey) {
-    setMobileMenu(false);
-    setNotice("");
-    if (pageKey === "dashboard") return;
-    if (onNavigate) {
-      onNavigate(pageKey);
-    } else {
-      setNotice(`${pageKey} page is not connected yet.`);
-    }
-  }
+    const [dashboardData, setDashboardData] = useState({
+        summary: {
+            todaySales: 0,
+            monthlyRevenue: 0,
+            totalOrders: 0,
+            monthlyProfit: 0
+        },
+        lowStock: [],
+        expiringProducts: [],
+        paymentBreakdown: [],
+        purchaseOrders: []
+    });
 
-  function handleLogout() {
-    setMobileMenu(false);
-    if (onLogout) {
-      onLogout();
-    } else if (onNavigate) {
-      onNavigate("login");
-    }
-  }
+    const [salesChart, setSalesChart] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [chartLoading, setChartLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [notice, setNotice] = useState("");
+    const [receivingOrderId, setReceivingOrderId] = useState(null);
 
-  function markOrderReceived(id) {
-    setOrders((current) => current.map((order) => order.id === id ? { ...order, status: "Received" } : order));
-    setNotice(`${id} marked as received (demo only).`);
-  }
 
-  function exportSalesCsv() {
-    const rows = [
-      ["Date", "Order ID", "Amount (LKR)", "Payment Method", "Items", "Status"],
-      ...filteredSales.map((s) => [s.date, s.id, s.amount, s.method, s.items, s.status])
+    // ==============================
+    // NAVIGATION ITEMS
+    // ==============================
+
+    const navItems = [
+        {
+            label: "Dashboard",
+            icon: LayoutDashboard,
+            page: "dashboard"
+        },
+        {
+            label: "POS Billing",
+            icon: ShoppingCart,
+            page: "billing"
+        },
+        {
+            label: "Products Management",
+            icon: Package,
+            page: "products"
+        },
+        {
+            label: "Inventory",
+            icon: Warehouse,
+            page: "inventory",
+            count: dashboardData.lowStock.length
+        },
+        {
+            label: "Suppliers Management",
+            icon: Truck,
+            page: "suppliers"
+        },
+        {
+            label: "Purchase Orders",
+            icon: ClipboardList,
+            page: "purchase_orders"
+        },
+        {
+            label: "Customer Management",
+            icon: Users,
+            page: "customers"
+        },
+        {
+            label: "Sales History",
+            icon: History,
+            page: "sales_history"
+        },
+        {
+            label: "Reports",
+            icon: ChartNoAxesCombined,
+            page: "reports"
+        },
+        {
+            label: "Settings",
+            icon: Settings,
+            page: "settings"
+        }
     ];
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "smart-pos-sales-history.csv";
-    link.click();
-    URL.revokeObjectURL(url);
-    setNotice("Sales history CSV exported.");
-  }
 
-  return (
-    <div className="sp-dashboard">
-      <aside className={`sp-sidebar ${mobileMenu ? "sp-sidebar-open" : ""}`}>
-        <div className="sp-brand">
-          <img src={logo} alt="Smart POS Logo" className="brand-logo" />
-          <button className="sp-close-menu" onClick={() => setMobileMenu(false)} aria-label="Close menu"><X size={20}/></button>
+
+    // ==============================
+    // LOAD DASHBOARD DATA
+    // ==============================
+
+    async function loadDashboard() {
+        try {
+            setLoading(true);
+            setError("");
+
+            const data = await getDashboard();
+
+            setDashboardData({
+                summary: {
+                    todaySales: data.summary?.todaySales || 0,
+                    monthlyRevenue: data.summary?.monthlyRevenue || 0,
+                    totalOrders: data.summary?.totalOrders || 0,
+                    monthlyProfit: data.summary?.monthlyProfit || 0
+                },
+
+                lowStock: data.lowStock || [],
+                expiringProducts: data.expiringProducts || [],
+                paymentBreakdown: data.paymentBreakdown || [],
+                purchaseOrders: data.purchaseOrders || []
+            });
+
+        } catch (error) {
+            console.error("Dashboard loading error:", error);
+            setError(error.message || "Failed to load dashboard.");
+
+        } finally {
+            setLoading(false);
+        }
+    }
+
+
+    // ==============================
+    // LOAD SALES PERFORMANCE
+    // ==============================
+
+    async function loadSalesChart() {
+        try {
+            setChartLoading(true);
+
+            const data = await getSalesPerformance(period);
+
+            setSalesChart(data || []);
+
+        } catch (error) {
+            console.error("Sales chart error:", error);
+            setSalesChart([]);
+
+        } finally {
+            setChartLoading(false);
+        }
+    }
+
+
+    // ==============================
+    // INITIAL API CALL
+    // ==============================
+
+    useEffect(() => {
+        loadDashboard();
+    }, []);
+
+
+    // ==============================
+    // SALES CHART API CALL
+    // ==============================
+
+    useEffect(() => {
+        loadSalesChart();
+    }, [period]);
+
+
+    // ==============================
+    // NAVIGATION
+    // ==============================
+
+    function chooseNav(pageKey) {
+        setMobileMenu(false);
+        setNotice("");
+
+        if (pageKey === "dashboard") return;
+
+        if (onNavigate) {
+            onNavigate(pageKey);
+        } else {
+            setNotice(`${pageKey} page is not connected yet.`);
+        }
+    }
+
+
+    // ==============================
+    // LOGOUT
+    // ==============================
+
+    function handleLogout() {
+        setMobileMenu(false);
+
+        if (onLogout) {
+            onLogout();
+        } else if (onNavigate) {
+            onNavigate("login");
+        }
+    }
+
+
+    // ==============================
+    // PAYMENT CALCULATIONS
+    // ==============================
+
+    const paymentTotal = dashboardData.paymentBreakdown.reduce(
+        (total, payment) => total + Number(payment.total || 0),
+        0
+    );
+
+
+    function getPaymentAmount(method) {
+        const payment = dashboardData.paymentBreakdown.find(
+            (p) => p.payment_method === method
+        );
+
+        return Number(payment?.total || 0);
+    }
+
+
+    function getPaymentPercentage(method) {
+        if (paymentTotal === 0) return 0;
+
+        return Math.round(
+            (getPaymentAmount(method) / paymentTotal) * 100
+        );
+    }
+
+
+    const digitalPaymentAmount =
+        getPaymentAmount("QR Pay") +
+        getPaymentAmount("QR") +
+        getPaymentAmount("Digital");
+
+
+    const digitalPaymentPercentage =
+        getPaymentPercentage("QR Pay") +
+        getPaymentPercentage("QR") +
+        getPaymentPercentage("Digital");
+
+
+    // ==============================
+    // SALES CHART CALCULATIONS
+    // ==============================
+
+    const chartPoints = useMemo(() => {
+        if (!salesChart.length) return [];
+
+        const width = 502;
+        const height = 142;
+
+        const maxValue = Math.max(
+            ...salesChart.map((item) => Number(item.amount || 0)),
+            1
+        );
+
+        return salesChart.map((item, index) => ({
+            x: salesChart.length === 1
+                ? width / 2
+                : 8 + (index / (salesChart.length - 1)) * width,
+
+            y: height - (
+                Number(item.amount || 0) / maxValue
+            ) * height,
+
+            label: shortDate(item.sale_date),
+            amount: Number(item.amount || 0)
+        }));
+
+    }, [salesChart]);
+
+
+    const chartPolyline = chartPoints
+        .map((point) => `${point.x},${point.y}`)
+        .join(" ");
+
+
+    const chartArea = chartPoints.length > 0
+        ? `M ${chartPoints[0].x} 180 L ${
+            chartPoints.map((point) => `${point.x} ${point.y}`).join(" L ")
+        } L ${chartPoints[chartPoints.length - 1].x} 180 Z`
+        : "";
+
+
+    const chartTotal = salesChart.reduce(
+        (total, item) => total + Number(item.amount || 0),
+        0
+    );
+
+
+    // ==============================
+    // PURCHASE ORDER RECEIVING
+    // ==============================
+
+    async function markOrderReceived(id) {
+        try {
+            setReceivingOrderId(id);
+
+            await markPurchaseOrderReceived(id);
+
+            setNotice("Purchase order received successfully.");
+
+            await loadDashboard();
+
+        } catch (error) {
+            console.error("Purchase order error:", error);
+
+            setNotice(
+                error.message || "Failed to receive purchase order."
+            );
+
+        } finally {
+            setReceivingOrderId(null);
+        }
+    }
+
+
+    // ==============================
+    // NOTIFICATION COUNTS
+    // ==============================
+
+    const lowStockCount = dashboardData.lowStock.length;
+    const expiringCount = dashboardData.expiringProducts.length;
+
+    const pendingOrdersCount = dashboardData.purchaseOrders.filter(
+        (order) => order.status === "Pending"
+    ).length;
+
+
+    // ==============================
+    // RENDER
+    // ==============================
+
+    return (
+        <div className="sp-dashboard">
+
+            {/* ================================= */}
+            {/* SIDEBAR */}
+            {/* ================================= */}
+
+            <aside className={`sp-sidebar ${
+                mobileMenu ? "sp-sidebar-open" : ""
+            }`}>
+
+                <div className="sp-brand">
+                    <img
+                        src={logo}
+                        alt="Smart POS Logo"
+                        className="brand-logo"
+                    />
+
+                    <button
+                        className="sp-close-menu"
+                        onClick={() => setMobileMenu(false)}
+                        aria-label="Close menu"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="sp-nav-label">
+                    MAIN MENU
+                </div>
+
+                <nav className="sp-nav">
+                    {navItems.map(({ label, icon: Icon, page, count }) => (
+                        <button
+                            key={page}
+                            className={`sp-nav-item ${
+                                page === "dashboard" ? "selected" : ""
+                            }`}
+                            onClick={() => chooseNav(page)}
+                        >
+                            <Icon size={18} />
+
+                            <span>{label}</span>
+
+                            {count > 0 && (
+                                <span className="sp-nav-count">
+                                    {count}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </nav>
+
+                <div className="sp-sidebar-bottom">
+                    <div className="sp-help-card">
+                        <strong>Need help?</strong>
+
+                        <p>
+                            Check your stock and sales insights to make better decisions.
+                        </p>
+                    </div>
+
+                    <button
+                        className="sp-nav-item"
+                        onClick={handleLogout}
+                    >
+                        <LogOut size={18} />
+                        <span>Logout</span>
+                    </button>
+                </div>
+
+            </aside>
+
+
+            {/* MOBILE BACKDROP */}
+
+            {mobileMenu && (
+                <button
+                    className="sp-backdrop"
+                    onClick={() => setMobileMenu(false)}
+                    aria-label="Close navigation"
+                />
+            )}
+
+
+            {/* ================================= */}
+            {/* MAIN CONTENT */}
+            {/* ================================= */}
+
+            <main className="sp-main">
+
+                {/* ================================= */}
+                {/* TOPBAR */}
+                {/* ================================= */}
+
+                <header className="sp-topbar">
+
+                    <button
+                        className="sp-mobile-menu"
+                        onClick={() => setMobileMenu(true)}
+                        aria-label="Open menu"
+                    >
+                        <Menu size={21} />
+                    </button>
+
+                    <div className="sp-page-heading sh-heading">
+                        <h1>Welcome back, Owner!</h1>
+
+                        <p>
+                            <CalendarDays size={14} />
+
+                            {new Date().toLocaleDateString("en-GB", {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric"
+                            })}
+
+                            <span className="billing-heading-dot">
+                                .
+                            </span>
+
+                            Store Owner Dashboard
+                        </p>
+                    </div>
+
+                    <div className="sp-top-actions">
+
+                        {/* SEARCH */}
+
+                        <label className="sp-search">
+                            <Search size={17} />
+
+                            <input
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search..."
+                            />
+                        </label>
+
+
+                        {/* NOTIFICATIONS */}
+
+                        <div className="sp-notification-wrap">
+
+                            <button
+                                className="sp-icon-button"
+                                onClick={() => setShowNotifications((v) => !v)}
+                                aria-label="Notifications"
+                            >
+                                <Bell size={19} />
+
+                                {(lowStockCount + expiringCount + pendingOrdersCount) > 0 && (
+                                    <i>
+                                        {lowStockCount + expiringCount + pendingOrdersCount}
+                                    </i>
+                                )}
+                            </button>
+
+                            {showNotifications && (
+                                <div className="sp-notification-pop">
+                                    <strong>Notifications</strong>
+
+                                    <p>
+                                        <AlertTriangle size={14} />
+                                        {lowStockCount} products have low stock.
+                                    </p>
+
+                                    <p>
+                                        <CalendarDays size={14} />
+                                        {expiringCount} products are expiring soon.
+                                    </p>
+
+                                    <p>
+                                        <ClipboardList size={14} />
+                                        {pendingOrdersCount} purchase orders pending.
+                                    </p>
+                                </div>
+                            )}
+
+                        </div>
+
+
+                        {/* PROFILE */}
+
+                        <div className="sp-profile">
+                            <div className="sp-avatar">
+                                O
+                            </div>
+
+                            <div>
+                                <strong>Owner</strong>
+                                <small>Store Owner</small>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </header>
+
+
+                {/* ================================= */}
+                {/* NOTICE */}
+                {/* ================================= */}
+
+                {notice && (
+                    <div className="sp-notice">
+                        <span>{notice}</span>
+
+                        <button
+                            onClick={() => setNotice("")}
+                            aria-label="Dismiss message"
+                        >
+                            <X size={15} />
+                        </button>
+                    </div>
+                )}
+
+
+                {/* ================================= */}
+                {/* LOADING */}
+                {/* ================================= */}
+
+                {loading && (
+                    <div className="sp-notice">
+                        Loading dashboard information...
+                    </div>
+                )}
+
+
+                {/* ================================= */}
+                {/* ERROR */}
+                {/* ================================= */}
+
+                {error && (
+                    <div className="sp-notice">
+                        <span>{error}</span>
+
+                        <button onClick={loadDashboard}>
+                            Retry
+                        </button>
+                    </div>
+                )}
+
+
+                {/* ================================= */}
+                {/* DASHBOARD DATA */}
+                {/* ================================= */}
+
+                {!loading && !error && (
+                    <>
+
+                        {/* ================================= */}
+                        {/* KPI CARDS */}
+                        {/* ================================= */}
+
+                        <section className="sp-kpi-grid">
+
+                            <article className="sp-kpi">
+                                <div className="sp-kpi-icon blue">
+                                    <ChartNoAxesCombined size={21} />
+                                </div>
+
+                                <div>
+                                    <span>Today's Sales</span>
+
+                                    <strong>
+                                        {money(dashboardData.summary.todaySales)}
+                                    </strong>
+
+                                    <small className="sp-muted">
+                                        Today's completed sales
+                                    </small>
+                                </div>
+                            </article>
+
+
+                            <article className="sp-kpi">
+                                <div className="sp-kpi-icon green">
+                                    <CircleDollarSign size={21} />
+                                </div>
+
+                                <div>
+                                    <span>Monthly Revenue</span>
+
+                                    <strong>
+                                        {money(dashboardData.summary.monthlyRevenue)}
+                                    </strong>
+
+                                    <small className="sp-muted">
+                                        Current month revenue
+                                    </small>
+                                </div>
+                            </article>
+
+
+                            <article className="sp-kpi">
+                                <div className="sp-kpi-icon orange">
+                                    <ShoppingCart size={21} />
+                                </div>
+
+                                <div>
+                                    <span>Total Orders</span>
+
+                                    <strong>
+                                        {dashboardData.summary.totalOrders}
+                                    </strong>
+
+                                    <small className="sp-muted">
+                                        Today's transactions
+                                    </small>
+                                </div>
+                            </article>
+
+
+                            <article className="sp-kpi">
+                                <div className="sp-kpi-icon purple">
+                                    <CircleDollarSign size={21} />
+                                </div>
+
+                                <div>
+                                    <span>Profit (This Month)</span>
+
+                                    <strong>
+                                        {money(dashboardData.summary.monthlyProfit)}
+                                    </strong>
+
+                                    <small className="sp-muted">
+                                        Estimated gross profit
+                                    </small>
+                                </div>
+                            </article>
+
+                        </section>
+
+
+                        {/* ================================= */}
+                        {/* PRIMARY GRID */}
+                        {/* ================================= */}
+
+                        <section className="sp-primary-grid">
+
+                            {/* SALES PERFORMANCE */}
+
+                            <article className="sp-panel sp-sales-panel">
+
+                                <div className="sp-panel-head">
+                                    <div>
+                                        <h2>Sales Performance</h2>
+
+                                        <p>
+                                            Track your store's sales trends
+                                        </p>
+                                    </div>
+
+                                    <select
+                                        value={period}
+                                        onChange={(e) => setPeriod(e.target.value)}
+                                        aria-label="Sales period"
+                                    >
+                                        <option>Weekly</option>
+                                        <option>Daily</option>
+                                    </select>
+                                </div>
+
+
+                                <div className="sp-chart-summary">
+                                    <strong>
+                                        {money(chartTotal)}
+                                    </strong>
+
+                                    <span className="sp-positive">
+                                        Sales total
+
+                                        <small>
+                                            {period.toLowerCase()}
+                                        </small>
+                                    </span>
+                                </div>
+
+
+                                <div className="sp-chart">
+
+                                    <div className="sp-y-labels">
+                                        <span>100%</span>
+                                        <span>75%</span>
+                                        <span>50%</span>
+                                        <span>25%</span>
+                                        <span>0</span>
+                                    </div>
+
+                                    <svg
+                                        viewBox="0 0 520 205"
+                                        role="img"
+                                        aria-label="Sales performance chart"
+                                        preserveAspectRatio="none"
+                                    >
+                                        <defs>
+                                            <linearGradient
+                                                id="spArea"
+                                                x1="0"
+                                                y1="0"
+                                                x2="0"
+                                                y2="1"
+                                            >
+                                                <stop
+                                                    offset="0%"
+                                                    stopColor="#4f6fff"
+                                                    stopOpacity=".25"
+                                                />
+
+                                                <stop
+                                                    offset="100%"
+                                                    stopColor="#4f6fff"
+                                                    stopOpacity=".015"
+                                                />
+                                            </linearGradient>
+                                        </defs>
+
+                                        {[20, 60, 100, 140, 180].map((y) => (
+                                            <line
+                                                key={y}
+                                                x1="0"
+                                                y1={y}
+                                                x2="520"
+                                                y2={y}
+                                                stroke="#e9edf5"
+                                                strokeDasharray="4 5"
+                                            />
+                                        ))}
+
+                                        {chartPoints.length > 0 && (
+                                            <>
+                                                <path
+                                                    d={chartArea}
+                                                    fill="url(#spArea)"
+                                                />
+
+                                                <polyline
+                                                    points={chartPolyline}
+                                                    fill="none"
+                                                    stroke="#4f6fff"
+                                                    strokeWidth="3"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+
+                                                {chartPoints.map((point, index) => (
+                                                    <circle
+                                                        key={index}
+                                                        cx={point.x}
+                                                        cy={point.y}
+                                                        r="4.5"
+                                                        fill="#fff"
+                                                        stroke="#4f6fff"
+                                                        strokeWidth="2.5"
+                                                    />
+                                                ))}
+                                            </>
+                                        )}
+
+                                    </svg>
+
+                                    <div className="sp-x-labels">
+                                        {chartPoints.map((point, index) => (
+                                            <span key={index}>
+                                                {point.label}
+                                            </span>
+                                        ))}
+                                    </div>
+
+                                    {chartLoading && (
+                                        <small>Loading sales chart...</small>
+                                    )}
+
+                                    {!chartLoading && chartPoints.length === 0 && (
+                                        <div className="sp-empty">
+                                            No sales data available.
+                                        </div>
+                                    )}
+
+                                </div>
+
+                            </article>
+
+
+                            {/* LOW STOCK ALERT */}
+
+                            <article className="sp-panel sp-stock-panel">
+
+                                <div className="sp-panel-head">
+                                    <div>
+                                        <h2>Low Stock Alert</h2>
+
+                                        <p>
+                                            Restock these items soon
+                                        </p>
+                                    </div>
+
+                                    <span className="sp-counter danger">
+                                        {dashboardData.lowStock.length} items
+                                    </span>
+                                </div>
+
+
+                                <div className="sp-compact-list">
+
+                                    {dashboardData.lowStock.map((item) => (
+                                        <div
+                                            className="sp-stock-row"
+                                            key={item.item_id}
+                                        >
+                                            <div className="sp-product-dot">
+                                                {item.item_name?.slice(0, 1) || "?"}
+                                            </div>
+
+                                            <div className="sp-stock-name">
+                                                <strong>
+                                                    {item.item_name}
+                                                </strong>
+
+                                                <small>
+                                                    {item.stock} units left
+                                                </small>
+                                            </div>
+
+                                            <span className={`sp-status ${
+                                                item.level === "Critical"
+                                                    ? "critical"
+                                                    : "warning"
+                                            }`}>
+                                                {item.level}
+                                            </span>
+                                        </div>
+                                    ))}
+
+                                    {dashboardData.lowStock.length === 0 && (
+                                        <div className="sp-empty">
+                                            No low stock products.
+                                        </div>
+                                    )}
+
+                                </div>
+
+
+                                <button
+                                    className="sp-text-link"
+                                    onClick={() => chooseNav("inventory")}
+                                >
+                                    View inventory
+                                    <ArrowUpRight size={14} />
+                                </button>
+
+                            </article>
+
+
+                            {/* EXPIRING PRODUCTS */}
+
+                            <article className="sp-panel sp-expiry-panel">
+
+                                <div className="sp-panel-head">
+                                    <div>
+                                        <h2>Expiring Products</h2>
+
+                                        <p>
+                                            Check these dates carefully
+                                        </p>
+                                    </div>
+
+                                    <span className="sp-counter warning">
+                                        {dashboardData.expiringProducts.length} items
+                                    </span>
+                                </div>
+
+
+                                <div className="sp-table-wrap">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Product</th>
+                                                <th>Stock</th>
+                                                <th>Expiry date</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            {dashboardData.expiringProducts.map((p) => (
+                                                <tr key={p.item_id}>
+                                                    <td>{p.item_name}</td>
+                                                    <td>{p.stock}</td>
+
+                                                    <td>
+                                                        <span className="sp-date-warning">
+                                                            {shortDate(p.expiry_date)}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+
+                                            {dashboardData.expiringProducts.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan="3"
+                                                        className="sp-empty"
+                                                    >
+                                                        No expiring products found.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </article>
+
+                        </section>
+
+
+                        {/* ================================= */}
+                        {/* SECONDARY GRID */}
+                        {/* PURCHASE ORDERS + PAYMENT METHODS */}
+                        {/* ================================= */}
+
+                        <section className="sp-secondary-grid">
+
+
+                            {/* RECENT PURCHASE ORDERS - LEFT SIDE */}
+
+                            <article className="sp-panel sp-orders-panel">
+
+                                <div className="sp-panel-head">
+                                    <div>
+                                        <h2>Recent Purchase Orders</h2>
+
+                                        <p>
+                                            Supplier order status
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        className="sp-icon-button subtle"
+                                        onClick={() => chooseNav("purchase_orders")}
+                                        aria-label="View purchase orders"
+                                    >
+                                        <ArrowUpRight size={17} />
+                                    </button>
+                                </div>
+
+
+                                <div className="sp-order-list">
+
+                                    {dashboardData.purchaseOrders.map((o) => (
+                                        <div
+                                            className="sp-order-item"
+                                            key={o.purchase_order_id}
+                                        >
+                                            <div className="sp-order-icon">
+                                                <ClipboardList size={18} />
+                                            </div>
+
+                                            <div className="sp-order-info">
+                                                <strong>
+                                                    {o.order_no}
+                                                </strong>
+
+                                                <span>
+                                                    {o.supplier_name} · {o.items} products
+                                                </span>
+
+                                                <small>
+                                                    {shortDate(o.order_date)}
+                                                </small>
+                                            </div>
+
+
+                                            <div className="sp-order-right">
+
+                                                <span className={`sp-status ${
+                                                    o.status === "Received"
+                                                        ? "received"
+                                                        : "warning"
+                                                }`}>
+                                                    {o.status}
+                                                </span>
+
+                                                {o.status === "Pending" && (
+                                                    <button
+                                                        disabled={
+                                                            receivingOrderId === o.purchase_order_id
+                                                        }
+                                                        onClick={() =>
+                                                            markOrderReceived(o.purchase_order_id)
+                                                        }
+                                                    >
+                                                        {receivingOrderId === o.purchase_order_id
+                                                            ? "Processing..."
+                                                            : "Mark received"
+                                                        }
+                                                    </button>
+                                                )}
+
+                                            </div>
+
+                                        </div>
+                                    ))}
+
+
+                                    {dashboardData.purchaseOrders.length === 0 && (
+                                        <div className="sp-empty">
+                                            No purchase orders available.
+                                        </div>
+                                    )}
+
+                                </div>
+
+                            </article>
+
+
+                            {/* PAYMENT METHODS - RIGHT SIDE */}
+
+                            <article className="sp-panel sp-payment-panel">
+
+                                <div className="sp-panel-head">
+                                    <div>
+                                        <h2>Payment Methods</h2>
+
+                                        <p>
+                                            Today's payment breakdown
+                                        </p>
+                                    </div>
+                                </div>
+
+
+                                <div className="sp-payment-total">
+                                    <strong>
+                                        {money(paymentTotal)}
+                                    </strong>
+
+                                    <span>
+                                        Total collected today
+                                    </span>
+                                </div>
+
+
+                                {/* CASH */}
+
+                                <div className="sp-payment-row">
+                                    <span className="sp-payment-label">
+                                        <Banknote size={16} />
+                                        Cash
+                                    </span>
+
+                                    <strong>
+                                        {money(getPaymentAmount("Cash"))}
+                                    </strong>
+
+                                    <span className="sp-payment-percent">
+                                        {getPaymentPercentage("Cash")}%
+                                    </span>
+                                </div>
+
+                                <div className="sp-payment-bar">
+                                    <span
+                                        style={{
+                                            width: `${getPaymentPercentage("Cash")}%`
+                                        }}
+                                    />
+                                </div>
+
+
+                                {/* CARD */}
+
+                                <div className="sp-payment-row">
+                                    <span className="sp-payment-label">
+                                        <CreditCard size={16} />
+                                        Card
+                                    </span>
+
+                                    <strong>
+                                        {money(getPaymentAmount("Card"))}
+                                    </strong>
+
+                                    <span className="sp-payment-percent">
+                                        {getPaymentPercentage("Card")}%
+                                    </span>
+                                </div>
+
+                                <div className="sp-payment-bar green-bar">
+                                    <span
+                                        style={{
+                                            width: `${getPaymentPercentage("Card")}%`
+                                        }}
+                                    />
+                                </div>
+
+
+                                {/* QR / DIGITAL */}
+
+                                <div className="sp-payment-row">
+                                    <span className="sp-payment-label">
+                                        <QrCode size={16} />
+                                        QR / Digital
+                                    </span>
+
+                                    <strong>
+                                        {money(digitalPaymentAmount)}
+                                    </strong>
+
+                                    <span className="sp-payment-percent">
+                                        {digitalPaymentPercentage}%
+                                    </span>
+                                </div>
+
+                                <div className="sp-payment-bar orange-bar">
+                                    <span
+                                        style={{
+                                            width: `${digitalPaymentPercentage}%`
+                                        }}
+                                    />
+                                </div>
+
+                            </article>
+
+                        </section>
+
+                    </>
+                )}
+
+
+                {/* ================================= */}
+                {/* FOOTER */}
+                {/* ================================= */}
+
+                <footer className="sp-footer">
+                    <span>
+                        © Smart POS · FoodCity Smart POS System
+                    </span>
+                </footer>
+
+            </main>
+
         </div>
-        
-        <div className="sp-nav-label">MAIN MENU</div>
-        
-        <nav className="sp-nav">
-          {navItems.map(({ label, icon: Icon, page, count }) => (
-            <button 
-              key={page} 
-              className={`sp-nav-item ${page === "dashboard" ? "selected" : ""}`} 
-              onClick={() => chooseNav(page)}
-            >
-              <Icon size={18} />
-              <span>{label}</span>
-              {count && <span className="sp-nav-count">{count}</span>}
-            </button>
-          ))}
-        </nav>
-
-        <div className="sp-sidebar-bottom">
-          <div className="sp-help-card">
-            <strong>Need help?</strong>
-            <p>Check your stock and sales insights to make better decisions.</p>
-          </div>
-
-          <button className="sp-nav-item" onClick={handleLogout}>
-            <LogOut size={18}/>
-            <span>Logout</span>
-          </button>
-        </div>
-      </aside>
-
-      {mobileMenu && <button className="sp-backdrop" onClick={() => setMobileMenu(false)} aria-label="Close navigation" />}
-
-      <main className="sp-main">
-        <header className="sp-topbar">
-          <button className="sp-mobile-menu" onClick={() => setMobileMenu(true)} aria-label="Open menu"><Menu size={21}/></button>
-          <div className="sp-page-heading sh-heading">
-            <h1>Welcome back, Owner!</h1>
-            <p>
-              <CalendarDays size={14} />
-              {new Date().toLocaleDateString("en-GB", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-              <span className="billing-heading-dot">.</span>Store Owner Dashboard</p>
-          </div>
-          <div className="sp-top-actions">
-            <label className="sp-search"><Search size={17}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search sales / order ID..." /></label>
-            <div className="sp-notification-wrap">
-              <button className="sp-icon-button" onClick={() => setShowNotifications((v) => !v)} aria-label="Notifications"><Bell size={19}/><i>4</i></button>
-              {showNotifications && <div className="sp-notification-pop"><strong>Notifications</strong><p><AlertTriangle size={14}/> 3 products have critical stock.</p><p><CalendarDays size={14}/> 5 products are expiring soon.</p><p><ClipboardList size={14}/> 2 purchase orders pending.</p></div>}
-            </div>
-            <div className="sp-profile"><div className="sp-avatar">O</div><div><strong>Owner</strong><small>Store Owner</small></div></div>
-          </div>
-        </header>
-
-        {notice && <div className="sp-notice"><span>{notice}</span><button onClick={() => setNotice("")} aria-label="Dismiss message"><X size={15}/></button></div>}
-
-        <section className="sp-kpi-grid">
-          <article className="sp-kpi"><div className="sp-kpi-icon blue"><ChartNoAxesCombined size={21}/></div><div><span>Today's Sales</span><strong>{money(50000)}</strong><small className="sp-positive"><ArrowUpRight size={13}/> 12.8% vs yesterday</small></div></article>
-          <article className="sp-kpi"><div className="sp-kpi-icon green"><CircleDollarSign size={21}/></div><div><span>Monthly Revenue</span><strong>{money(1230000)}</strong><small className="sp-positive"><ArrowUpRight size={13}/> 8.4% this month</small></div></article>
-          <article className="sp-kpi"><div className="sp-kpi-icon orange"><ShoppingCart size={21}/></div><div><span>Total Orders</span><strong>124</strong><small className="sp-muted">Today's transactions</small></div></article>
-          <article className="sp-kpi"><div className="sp-kpi-icon purple"><CircleDollarSign size={21}/></div><div><span>Profit (This Month)</span><strong>{money(89000)}</strong><small className="sp-positive"><ArrowUpRight size={13}/> 6.2% this month</small></div></article>
-        </section>
-
-        <section className="sp-primary-grid">
-          <article className="sp-panel sp-sales-panel">
-            <div className="sp-panel-head"><div><h2>Sales Performance</h2><p>Track your store's sales trends</p></div><select value={period} onChange={(e) => setPeriod(e.target.value)} aria-label="Sales period"><option>Weekly</option><option>Daily</option></select></div>
-            <div className="sp-chart-summary"><strong>{money(period === "Weekly" ? 279000 : 50000)}</strong><span className="sp-positive">+8.4% <small>vs previous {period.toLowerCase()}</small></span></div>
-            <div className="sp-chart">
-              <div className="sp-y-labels"><span>60k</span><span>45k</span><span>30k</span><span>15k</span><span>0</span></div>
-              <svg viewBox="0 0 520 205" role="img" aria-label="Illustrative sales line chart" preserveAspectRatio="none">
-                <defs><linearGradient id="spArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#4f6fff" stopOpacity=".25"/><stop offset="100%" stopColor="#4f6fff" stopOpacity=".015"/></linearGradient></defs>
-                {[20,60,100,140,180].map((y) => <line key={y} x1="0" y1={y} x2="520" y2={y} stroke="#e9edf5" strokeDasharray="4 5" />)}
-                <path d="M 8 145 L 90 112 L 172 78 L 254 38 L 336 82 L 418 66 L 510 120 L 510 180 L 8 180 Z" fill="url(#spArea)"/>
-                <polyline points="8,145 90,112 172,78 254,38 336,82 418,66 510,120" fill="none" stroke="#4f6fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                {[[8,145],[90,112],[172,78],[254,38],[336,82],[418,66],[510,120]].map(([x,y]) => <circle key={x} cx={x} cy={y} r="4.5" fill="#fff" stroke="#4f6fff" strokeWidth="2.5"/>)}
-              </svg>
-              <div className="sp-x-labels">{salesByDay.map((d) => <span key={d.day}>{d.day}</span>)}</div>
-            </div>
-          </article>
-
-          <article className="sp-panel sp-stock-panel">
-            <div className="sp-panel-head"><div><h2>Low Stock Alert</h2><p>Restock these items soon</p></div><span className="sp-counter danger">5 items</span></div>
-            <div className="sp-compact-list">
-              {initialLowStock.map((item) => <div className="sp-stock-row" key={item.name}><div className="sp-product-dot">{item.name.slice(0,1)}</div><div className="sp-stock-name"><strong>{item.name}</strong><small>{item.stock} units left</small></div><span className={`sp-status ${item.level === "Critical" ? "critical" : "warning"}`}>{item.level}</span></div>)}
-            </div>
-            <button className="sp-text-link" onClick={() => chooseNav("inventory")}>View inventory <ArrowUpRight size={14}/></button>
-          </article>
-
-          <article className="sp-panel sp-expiry-panel">
-            <div className="sp-panel-head"><div><h2>Expiring Products</h2><p>Check these dates carefully</p></div><span className="sp-counter warning">5 items</span></div>
-            <div className="sp-table-wrap">
-              <table><thead><tr><th>Product</th><th>Stock</th><th>Expiry date</th></tr></thead><tbody>
-                {expiringProducts.map((p) => <tr key={p.name}><td>{p.name}</td><td>{p.stock}</td><td><span className="sp-date-warning">{shortDate(p.expiry)}</span></td></tr>)}
-              </tbody></table>
-            </div>
-          </article>
-        </section>
-
-        <section className="sp-secondary-grid">
-          <article className="sp-panel sp-ai-panel">
-            <div className="sp-panel-head"><div className="sp-heading-with-icon"><span className="sp-ai-icon"><BrainCircuit size={19}/></span><div><h2>AI Stock Recommendation</h2><p>Suggested orders based on predicted demand</p></div></div><button className="sp-outline-button" onClick={() => setNotice("These are sample recommendations.")}>How it works</button></div>
-            <div className="sp-table-wrap">
-              <table><thead><tr><th>Product</th><th>Current stock</th><th>Predicted demand</th><th>Recommended order</th><th>Action</th></tr></thead><tbody>
-                {initialRecommendations.map((p) => <tr key={p.name}><td className="sp-table-product">{p.name}</td><td className="sp-red-number">{p.stock}</td><td>{p.demand}</td><td className="sp-green-number">{p.order}</td><td><button className="sp-order-button" onClick={() => setNotice(`${p.name}: draft reorder for ${p.order} units.`)}>Order now</button></td></tr>)}
-              </tbody></table>
-            </div>
-          </article>
-
-          <article className="sp-panel sp-payment-panel">
-            <div className="sp-panel-head"><div><h2>Payment Methods</h2><p>Today's payment breakdown</p></div></div>
-            <div className="sp-payment-total"><strong>{money(50000)}</strong><span>Total collected · demo data</span></div>
-            <div className="sp-payment-row"><span className="sp-payment-label"><Banknote size={16}/> Cash</span><strong>{money(24500)}</strong><span className="sp-payment-percent">49%</span></div>
-            <div className="sp-payment-bar"><span style={{width:"49%"}}/></div>
-            <div className="sp-payment-row"><span className="sp-payment-label"><CreditCard size={16}/> Card</span><strong>{money(18000)}</strong><span className="sp-payment-percent">36%</span></div>
-            <div className="sp-payment-bar green-bar"><span style={{width:"36%"}}/></div>
-            <div className="sp-payment-row"><span className="sp-payment-label"><QrCode size={16}/> QR / Digital</span><strong>{money(7500)}</strong><span className="sp-payment-percent">15%</span></div>
-            <div className="sp-payment-bar orange-bar"><span style={{width:"15%"}}/></div>
-          </article>
-        </section>
-
-        <section className="sp-bottom-grid">
-          <article className="sp-panel sp-history-panel">
-            <div className="sp-panel-head"><div><h2>Sales History</h2><p>Review your latest transactions</p></div><div className="sp-inline-actions"><select value={salesFilter} onChange={(e) => setSalesFilter(e.target.value)} aria-label="Filter payment method"><option>All</option><option>Cash</option><option>Card</option><option>QR Pay</option></select><button className="sp-outline-button" onClick={exportSalesCsv}>Export CSV</button></div></div>
-            <div className="sp-table-wrap">
-              <table><thead><tr><th>Date</th><th>Order ID</th><th>Amount</th><th>Payment</th><th>Items</th><th>Status</th><th>Details</th></tr></thead><tbody>
-                {filteredSales.map((s) => <tr key={s.id}><td>{shortDate(s.date)}</td><td className="sp-id">{s.id}</td><td className="sp-table-product">{money(s.amount)}</td><td>{s.method}</td><td>{s.items}</td><td><span className="sp-status received">{s.status}</span></td><td><button className="sp-view-button" onClick={() => setNotice(`${s.id}: ${s.items} items, total ${money(s.amount)}.`)}><Eye size={13}/> View</button></td></tr>)}
-                {filteredSales.length === 0 && <tr><td colSpan="7" className="sp-empty">No sales match your search/filter.</td></tr>}
-              </tbody></table>
-            </div>
-          </article>
-
-          <article className="sp-panel sp-orders-panel">
-            <div className="sp-panel-head"><div><h2>Recent Purchase Orders</h2><p>Supplier order status</p></div><button className="sp-icon-button subtle" onClick={() => chooseNav("purchase-orders")} aria-label="View purchase orders"><ArrowUpRight size={17}/></button></div>
-            <div className="sp-order-list">
-              {orders.map((o) => <div className="sp-order-item" key={o.id}><div className="sp-order-icon"><ClipboardList size={18}/></div><div className="sp-order-info"><strong>{o.id}</strong><span>{o.supplier} · {o.items} products</span><small>{shortDate(o.date)}</small></div><div className="sp-order-right"><span className={`sp-status ${o.status === "Received" ? "received" : "warning"}`}>{o.status}</span>{o.status === "Pending" && <button onClick={() => markOrderReceived(o.id)}>Mark received</button>}</div></div>)}
-            </div>
-          </article>
-        </section>
-
-        <footer className="sp-footer"><span>© Smart POS · FoodCity Smart POS System</span></footer>
-      </main>
-    </div>
-  );
+    );
 }

@@ -5,7 +5,7 @@ function makeOrderNo() {
 }
 
 async function createOrder(req, res) {
-  const { items, discount = 0, payment_method = "Cash", amount_paid } = req.body || {};
+  const { items, discount = 0, payment_method = "Cash", amount_paid , customer_id = null } = req.body || {};
 
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ message: "Please add at least one item." });
@@ -132,9 +132,9 @@ const currentDate = new Intl.DateTimeFormat("en-CA", {
       try {
         const [result] = await connection.execute(
           `INSERT INTO orders
-           (order_no, date, subtotal, discount_price, amount, payment_method, amount_paid, change_amount)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [ orderNo, currentDate, subtotal, finalDiscount, totalAmount, normalizedPaymentMethod, receivedAmount, changeAmount]
+           (order_no, date, customer_id, subtotal, discount_price, amount, payment_method, amount_paid, change_amount)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [ orderNo, currentDate, customer_id || null, subtotal, finalDiscount, totalAmount, normalizedPaymentMethod, receivedAmount, changeAmount]
         );
         const orderId = result.insertId;
         for (const line of orderLines) {
@@ -188,4 +188,29 @@ const currentDate = new Intl.DateTimeFormat("en-CA", {
   }
 }
 
-module.exports = { createOrder };
+async function getCustomers(req, res) {
+    try {
+        const [customers] = await db.query(`
+            SELECT
+                id,
+                name
+            FROM customers
+            ORDER BY name ASC
+        `);
+
+        return res.status(200).json({
+            success: true,
+            customers
+        });
+
+    } catch (error) {
+        console.error("Get customers error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to retrieve customers."
+        });
+    }
+}
+
+module.exports = { createOrder, getCustomers };

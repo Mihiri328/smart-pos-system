@@ -29,7 +29,8 @@ import {
 import {
     getBillingItems,
     getBillingCategories,
-    createBillingOrder
+    createBillingOrder,
+    getBillingCustomers
 } from "../services/billingService";
 
 // ======================================
@@ -108,6 +109,11 @@ const mapProduct = (row) => ({
 
 export default function Billing({ onNavigate, onLogout }) {
 
+    const [customerType, setCustomerType] = useState("Non-Registered");
+const [customers, setCustomers] = useState([]);
+const [selectedCustomer, setSelectedCustomer] = useState("");
+const [loadingCustomers, setLoadingCustomers] = useState(false);
+
     // ----------------------------------
     // STATES
     // ----------------------------------
@@ -133,6 +139,49 @@ export default function Billing({ onNavigate, onLogout }) {
     const [mobileMenu, setMobileMenu] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
 
+    useEffect(() => {
+
+    if (customerType !== "Registered") {
+        return;
+    }
+
+    const controller = new AbortController();
+
+    const loadCustomers = async () => {
+
+        try {
+
+            setLoadingCustomers(true);
+
+            const result = await getBillingCustomers({
+                signal: controller.signal
+            });
+
+            const customerList = Array.isArray(result.customers)
+                ? result.customers
+                : [];
+
+            setCustomers(customerList);
+
+        } catch (error) {
+
+            if (error.name !== "AbortError") {
+                setMessage(error.message || "Unable to load customers.");
+            }
+
+        } finally {
+
+            if (!controller.signal.aborted) {
+                setLoadingCustomers(false);
+            }
+        }
+    };
+
+    loadCustomers();
+
+    return () => controller.abort();
+
+}, [customerType]);
     // ----------------------------------
     // LOAD CATEGORIES
     // ----------------------------------
@@ -494,18 +543,22 @@ export default function Billing({ onNavigate, onLogout }) {
 
         const orderData = {
 
-            // Send calculated discount amount in Rupees
-            discount: Number(discountAmount.toFixed(2)),
+    customer_id:
+        customerType === "Registered" && selectedCustomer
+            ? Number(selectedCustomer)
+            : null,
 
-            payment_method: paymentMethod,
+    discount: Number(discountAmount.toFixed(2)),
 
-            amount_paid: Number(paid.toFixed(2)),
+    payment_method: paymentMethod,
 
-            items: cart.map((item) => ({
-                item_id: item.id,
-                quantity: item.quantity
-            }))
-        };
+    amount_paid: Number(paid.toFixed(2)),
+
+    items: cart.map((item) => ({
+        item_id: item.id,
+        quantity: item.quantity
+    }))
+};
 
         try {
 
@@ -545,6 +598,10 @@ export default function Billing({ onNavigate, onLogout }) {
             setCart([]);
             setDiscount("0");
             setAmountPaid("");
+
+            setCustomerType("Non-Registered");
+            
+            setSelectedCustomer("");
 
             setMessage(
                 result.message || "Order completed successfully."
@@ -1085,6 +1142,88 @@ export default function Billing({ onNavigate, onLogout }) {
 
                                 </div>
 
+                                {/* CUSTOMER SELECTION */}
+
+<div className="billing-customer-section">
+
+    <h3>Customer Type</h3>
+
+    <div className="billing-customer-radio-group">
+
+        <label>
+            <input
+                type="radio"
+                name="customerType"
+                value="Registered"
+                checked={customerType === "Registered"}
+                onChange={() => {
+                    setCustomerType("Registered");
+                    setSelectedCustomer("");
+                }}
+            />
+            Registered
+        </label>
+
+        <label>
+            <input
+                type="radio"
+                name="customerType"
+                value="Non-Registered"
+                checked={customerType === "Non-Registered"}
+                onChange={() => {
+                    setCustomerType("Non-Registered");
+                    setSelectedCustomer("");
+                }}
+            />
+            Non-Registered
+        </label>
+
+    </div>
+
+    {/* REGISTERED CUSTOMER DROPDOWN */}
+
+    {customerType === "Registered" && (
+
+        <div className="billing-payment-field">
+
+            <label htmlFor="billingCustomer">
+                Select Customer
+            </label>
+
+            <select
+                id="billingCustomer"
+                value={selectedCustomer}
+                onChange={(event) =>
+                    setSelectedCustomer(event.target.value)
+                }
+            >
+
+                <option value="">
+                    Select a customer
+                </option>
+
+                {customers.map((customer) => (
+
+                    <option
+                        key={customer.id}
+                        value={customer.id}
+                    >
+                        {customer.name}
+                    </option>
+
+                ))}
+
+            </select>
+
+            {loadingCustomers && (
+                <small>Loading customers...</small>
+            )}
+
+        </div>
+
+    )}
+
+</div>
                                 {/* DISCOUNT PERCENTAGE INPUT */}
 
                                 <div className="billing-payment-field no-print">

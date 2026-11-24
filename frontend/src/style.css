@@ -1371,6 +1371,41 @@ button, input { font: inherit; }
   }
 }
 
+.billing-customer-section {
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.billing-customer-section h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.billing-customer-radio-group {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.billing-customer-radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.billing-customer-radio-group input[type="radio"] {
+    accent-color: #16a34a;
+    cursor: pointer;
+}
+
+.billing-customer-section .billing-payment-field {
+    margin-top: 15px;
+}
+
 
 
 /* ==================== SALES HISTORY STYLES ==================== */

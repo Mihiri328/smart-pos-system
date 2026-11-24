@@ -100,3 +100,21 @@ export const createBillingOrder = async (orderData) => {
 
     return handleResponse(response);
 };
+
+export const getBillingCustomers = async ({ signal } = {}) => {
+    const response = await fetch(`${API_URL}/orders/customers`, {
+        method: "GET",
+        signal,
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.message || "Unable to load customers.");
+    }
+
+    return result;
+};

@@ -23,7 +23,7 @@ async function getItems(req, res) {
       : "";
 
     const [items] = await db.execute(
-      `SELECT item_id, item_name, category, unit, unit_price, quantity, image_path
+      `SELECT item_id, item_name,item_discount, category, unit, unit_price, quantity, image_path
        FROM item ${whereClause}
        ORDER BY item_name ASC`,
       params

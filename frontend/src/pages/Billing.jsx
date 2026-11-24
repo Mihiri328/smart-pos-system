@@ -92,16 +92,43 @@ const money = (amount) =>
         maximumFractionDigits: 2
     })}`;
 
-const mapProduct = (row) => ({
-    id: Number(row.item_id ?? row.id),
-    name: row.item_name ?? row.name ?? "",
-    sku: row.item_code ?? row.sku ?? `ITEM-${row.item_id ?? row.id}`,
-    category: row.category || "Uncategorized",
-    unit: row.unit || "Unit",
-    price: Number(row.unit_price ?? row.price ?? 0),
-    stock: Number(row.quantity ?? row.stock ?? 0),
-    image: resolveProductImage(row.image_path ?? row.image)
-});
+// ======================================
+// MAP PRODUCT
+// ======================================
+
+const mapProduct = (row) => {
+
+    const price = Number(row.unit_price ?? row.price ?? 0);
+
+    const discountPercentage = Math.min(
+        100,
+        Math.max(0, Number(row.item_discount) || 0)
+    );
+
+    const discountedPrice = discountPercentage > 0
+        ? price - (price * discountPercentage / 100)
+        : price;
+
+    return {
+        id: Number(row.item_id ?? row.id),
+        name: row.item_name ?? row.name ?? "",
+        sku: row.item_code ?? row.sku ?? `ITEM-${row.item_id ?? row.id}`,
+        category: row.category || "Uncategorized",
+        unit: row.unit || "Unit",
+
+        // Original price
+        price,
+
+        // Item discount percentage
+        discountPercentage,
+
+        // Price after item discount
+        discountedPrice: Number(discountedPrice.toFixed(2)),
+
+        stock: Number(row.quantity ?? row.stock ?? 0),
+        image: resolveProductImage(row.image_path ?? row.image)
+    };
+};
 
 // ======================================
 // BILLING COMPONENT
@@ -109,13 +136,17 @@ const mapProduct = (row) => ({
 
 export default function Billing({ onNavigate, onLogout }) {
 
+    // ----------------------------------
+    // CUSTOMER STATES
+    // ----------------------------------
+
     const [customerType, setCustomerType] = useState("Non-Registered");
-const [customers, setCustomers] = useState([]);
-const [selectedCustomer, setSelectedCustomer] = useState("");
-const [loadingCustomers, setLoadingCustomers] = useState(false);
+    const [customers, setCustomers] = useState([]);
+    const [selectedCustomer, setSelectedCustomer] = useState("");
+    const [loadingCustomers, setLoadingCustomers] = useState(false);
 
     // ----------------------------------
-    // STATES
+    // PRODUCT STATES
     // ----------------------------------
 
     const [products, setProducts] = useState([]);
@@ -124,11 +155,23 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All");
 
+    // ----------------------------------
+    // CART STATES
+    // ----------------------------------
+
     const [cart, setCart] = useState([]);
+
+    // ----------------------------------
+    // PAYMENT STATES
+    // ----------------------------------
 
     const [discount, setDiscount] = useState("0");
     const [paymentMethod, setPaymentMethod] = useState("Cash");
     const [amountPaid, setAmountPaid] = useState("");
+
+    // ----------------------------------
+    // GENERAL STATES
+    // ----------------------------------
 
     const [message, setMessage] = useState("");
     const [receipt, setReceipt] = useState(null);
@@ -139,52 +182,57 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
     const [mobileMenu, setMobileMenu] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
 
+    // ==================================
+    // LOAD CUSTOMERS
+    // ==================================
+
     useEffect(() => {
 
-    if (customerType !== "Registered") {
-        return;
-    }
-
-    const controller = new AbortController();
-
-    const loadCustomers = async () => {
-
-        try {
-
-            setLoadingCustomers(true);
-
-            const result = await getBillingCustomers({
-                signal: controller.signal
-            });
-
-            const customerList = Array.isArray(result.customers)
-                ? result.customers
-                : [];
-
-            setCustomers(customerList);
-
-        } catch (error) {
-
-            if (error.name !== "AbortError") {
-                setMessage(error.message || "Unable to load customers.");
-            }
-
-        } finally {
-
-            if (!controller.signal.aborted) {
-                setLoadingCustomers(false);
-            }
+        if (customerType !== "Registered") {
+            return;
         }
-    };
 
-    loadCustomers();
+        const controller = new AbortController();
 
-    return () => controller.abort();
+        const loadCustomers = async () => {
 
-}, [customerType]);
-    // ----------------------------------
+            try {
+
+                setLoadingCustomers(true);
+
+                const result = await getBillingCustomers({
+                    signal: controller.signal
+                });
+
+                const customerList = Array.isArray(result.customers)
+                    ? result.customers
+                    : [];
+
+                setCustomers(customerList);
+
+            } catch (error) {
+
+                if (error.name !== "AbortError") {
+                    setMessage(error.message || "Unable to load customers.");
+                }
+
+            } finally {
+
+                if (!controller.signal.aborted) {
+                    setLoadingCustomers(false);
+                }
+            }
+        };
+
+        loadCustomers();
+
+        return () => controller.abort();
+
+    }, [customerType]);
+
+    // ==================================
     // LOAD CATEGORIES
-    // ----------------------------------
+    // ==================================
 
     useEffect(() => {
 
@@ -221,9 +269,9 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
 
     }, []);
 
-    // ----------------------------------
+    // ==================================
     // LOAD PRODUCTS
-    // ----------------------------------
+    // ==================================
 
     useEffect(() => {
 
@@ -269,25 +317,27 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
 
     }, [search, category]);
 
-    // ----------------------------------
+    // ==================================
     // FILTERED PRODUCTS
-    // ----------------------------------
+    // ==================================
 
     const filteredProducts = products;
 
-    // ----------------------------------
+    // ==================================
     // CART CALCULATIONS
-    // ----------------------------------
+    // ==================================
 
     const subtotal = useMemo(
         () =>
             cart.reduce(
-                (sum, item) => sum + item.price * item.quantity,
+                (sum, item) =>
+                    sum + item.discountedPrice * item.quantity,
                 0
             ),
         [cart]
     );
 
+    // Additional bill-level discount
     const discountPercentage = Number(discount) || 0;
 
     const discountAmount =
@@ -312,9 +362,9 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
         0
     );
 
-    // ----------------------------------
+    // ==================================
     // NAVIGATION
-    // ----------------------------------
+    // ==================================
 
     function navigate(page) {
 
@@ -332,9 +382,9 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
         }
     }
 
-    // ----------------------------------
+    // ==================================
     // LOGOUT
-    // ----------------------------------
+    // ==================================
 
     function handleLogout() {
 
@@ -347,9 +397,9 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
         }
     }
 
-    // ----------------------------------
+    // ==================================
     // DISCOUNT INPUT
-    // ----------------------------------
+    // ==================================
 
     function handleDiscountChange(event) {
 
@@ -378,9 +428,9 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
         }
     }
 
-    // ----------------------------------
+    // ==================================
     // ADD PRODUCT TO CART
-    // ----------------------------------
+    // ==================================
 
     function addToCart(product) {
 
@@ -430,9 +480,9 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
         }
     }
 
-    // ----------------------------------
+    // ==================================
     // CHANGE CART QUANTITY
-    // ----------------------------------
+    // ==================================
 
     function changeQuantity(productId, change) {
 
@@ -467,9 +517,9 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
         );
     }
 
-    // ----------------------------------
+    // ==================================
     // REMOVE CART ITEM
-    // ----------------------------------
+    // ==================================
 
     function removeItem(productId) {
 
@@ -481,9 +531,9 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
         setMessage("");
     }
 
-    // ----------------------------------
+    // ==================================
     // CLEAR CART
-    // ----------------------------------
+    // ==================================
 
     function clearCart() {
 
@@ -494,9 +544,9 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
         setReceipt(null);
     }
 
-    // ----------------------------------
+    // ==================================
     // REFRESH PRODUCTS
-    // ----------------------------------
+    // ==================================
 
     async function refreshProducts() {
 
@@ -512,9 +562,9 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
         setProducts(rows.map(mapProduct));
     }
 
-    // ----------------------------------
+    // ==================================
     // COMPLETE ORDER
-    // ----------------------------------
+    // ==================================
 
     async function completeSale() {
 
@@ -524,6 +574,14 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
 
         if (cart.length === 0) {
             setMessage("Please add at least one product.");
+            return;
+        }
+
+        if (
+            customerType === "Registered" &&
+            !selectedCustomer
+        ) {
+            setMessage("Please select a registered customer.");
             return;
         }
 
@@ -543,22 +601,22 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
 
         const orderData = {
 
-    customer_id:
-        customerType === "Registered" && selectedCustomer
-            ? Number(selectedCustomer)
-            : null,
+            customer_id:
+                customerType === "Registered" && selectedCustomer
+                    ? Number(selectedCustomer)
+                    : null,
 
-    discount: Number(discountAmount.toFixed(2)),
+            discount: Number(discountAmount.toFixed(2)),
 
-    payment_method: paymentMethod,
+            payment_method: paymentMethod,
 
-    amount_paid: Number(paid.toFixed(2)),
+            amount_paid: Number(paid.toFixed(2)),
 
-    items: cart.map((item) => ({
-        item_id: item.id,
-        quantity: item.quantity
-    }))
-};
+            items: cart.map((item) => ({
+                item_id: item.id,
+                quantity: item.quantity
+            }))
+        };
 
         try {
 
@@ -600,7 +658,6 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
             setAmountPaid("");
 
             setCustomerType("Non-Registered");
-            
             setSelectedCustomer("");
 
             setMessage(
@@ -968,6 +1025,19 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
                                                             : "Out of stock"}
                                                     </span>
 
+                                                    {/* DISCOUNT BADGE */}
+
+                                                   {product.discountPercentage > 0 && (
+                                                     <div className="billing-discount-badge">
+                                                        <span className="billing-discount-text">
+                                                             {product.discountPercentage}%
+                                                             </span>
+                                                             <span className="billing-discount-label">
+                                                                OFF
+                                                                </span>
+                                                                </div>
+                                                            )}
+
                                                 </div>
 
                                                 <h3>{product.name}</h3>
@@ -982,11 +1052,27 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
 
                                                 <div className="billing-product-card-bottom">
 
-                                                    <div>
+                                                    <div className="billing-product-price">
 
-                                                        <strong>
-                                                            {money(product.price)}
-                                                        </strong>
+                                                        {product.discountPercentage > 0 ? (
+
+                                                            <>
+                                                                <span className="billing-original-price">
+                                                                    {money(product.price)}
+                                                                </span>
+
+                                                                <strong className="billing-discounted-price">
+                                                                    {money(product.discountedPrice)}
+                                                                </strong>
+                                                            </>
+
+                                                        ) : (
+
+                                                            <strong>
+                                                                {money(product.price)}
+                                                            </strong>
+
+                                                        )}
 
                                                         <small>
                                                             / {product.unit}
@@ -1071,8 +1157,18 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
 
                                                 <strong>{item.name}</strong>
 
-                                                <span>
-                                                    {money(item.price)} each
+                                                <span className="billing-cart-item-price">
+
+                                                    {item.discountPercentage > 0 && (
+                                                        <del>
+                                                            {money(item.price)}
+                                                        </del>
+                                                    )}
+
+                                                    <strong>
+                                                        {money(item.discountedPrice)} each
+                                                    </strong>
+
                                                 </span>
 
                                                 <div className="billing-quantity-controls no-print">
@@ -1107,7 +1203,7 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
                                             <div className="billing-cart-item-total">
 
                                                 <strong>
-                                                    {money(item.price * item.quantity)}
+                                                    {money(item.discountedPrice * item.quantity)}
                                                 </strong>
 
                                                 <button
@@ -1144,87 +1240,92 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
 
                                 {/* CUSTOMER SELECTION */}
 
-<div className="billing-customer-section">
+                                <div className="billing-customer-section">
 
-    <h3>Customer Type</h3>
+                                    <h3>Customer Type</h3>
 
-    <div className="billing-customer-radio-group">
+                                    <div className="billing-customer-radio-group">
 
-        <label>
-            <input
-                type="radio"
-                name="customerType"
-                value="Registered"
-                checked={customerType === "Registered"}
-                onChange={() => {
-                    setCustomerType("Registered");
-                    setSelectedCustomer("");
-                }}
-            />
-            Registered
-        </label>
+                                        <label>
+                                            <input
+                                                type="radio"
+                                                name="customerType"
+                                                value="Registered"
+                                                checked={customerType === "Registered"}
+                                                onChange={() => {
+                                                    setCustomerType("Registered");
+                                                    setSelectedCustomer("");
+                                                }}
+                                            />
+                                            Registered
+                                        </label>
 
-        <label>
-            <input
-                type="radio"
-                name="customerType"
-                value="Non-Registered"
-                checked={customerType === "Non-Registered"}
-                onChange={() => {
-                    setCustomerType("Non-Registered");
-                    setSelectedCustomer("");
-                }}
-            />
-            Non-Registered
-        </label>
+                                        <label>
+                                            <input
+                                                type="radio"
+                                                name="customerType"
+                                                value="Non-Registered"
+                                                checked={customerType === "Non-Registered"}
+                                                onChange={() => {
+                                                    setCustomerType("Non-Registered");
+                                                    setSelectedCustomer("");
+                                                }}
+                                            />
+                                            Non-Registered
+                                        </label>
 
-    </div>
+                                    </div>
 
-    {/* REGISTERED CUSTOMER DROPDOWN */}
+                                    {/* REGISTERED CUSTOMER DROPDOWN */}
 
-    {customerType === "Registered" && (
+                                    {customerType === "Registered" && (
 
-        <div className="billing-payment-field">
+                                        <div className="billing-payment-field">
 
-            <label htmlFor="billingCustomer">
-                Select Customer
-            </label>
+                                            <label htmlFor="billingCustomer">
+                                                Select Customer
+                                            </label>
 
-            <select
-                id="billingCustomer"
-                value={selectedCustomer}
-                onChange={(event) =>
-                    setSelectedCustomer(event.target.value)
-                }
-            >
+                                            <select
+                                                id="billingCustomer"
+                                                value={selectedCustomer}
+                                                onChange={(event) =>
+                                                    setSelectedCustomer(event.target.value)
+                                                }
+                                            >
 
-                <option value="">
-                    Select a customer
-                </option>
+                                                <option value="">
+                                                    Select a customer
+                                                </option>
 
-                {customers.map((customer) => (
+                                                {customers.map((customer) => (
 
-                    <option
-                        key={customer.id}
-                        value={customer.id}
-                    >
-                        {customer.name}
-                    </option>
+                                                    <option
+                                                        key={customer.id}
+                                                        value={customer.id}
+                                                    >
+                                                        {customer.name}
+                                                    </option>
 
-                ))}
+                                                ))}
 
-            </select>
+                                            </select>
 
-            {loadingCustomers && (
-                <small>Loading customers...</small>
-            )}
+                                            {loadingCustomers && (
+                                                <small>Loading customers...</small>
+                                            )}
 
-        </div>
+                                            {!loadingCustomers && customers.length === 0 && (
+                                                <small>No registered customers found.</small>
+                                            )}
 
-    )}
+                                        </div>
 
-</div>
-                                {/* DISCOUNT PERCENTAGE INPUT */}
+                                    )}
+
+                                </div>
+
+                                {/* BILL DISCOUNT */}
 
                                 <div className="billing-payment-field no-print">
 
@@ -1244,7 +1345,6 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
                                         placeholder="Enter discount percentage"
                                     />
 
-
                                 </div>
 
                                 {/* DISCOUNT AMOUNT */}
@@ -1252,7 +1352,7 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
                                 <div className="billing-calculation-row">
 
                                     <span>
-                                        Discount ({discountPercentage}%)
+                                        Bill Discount ({discountPercentage}%)
                                     </span>
 
                                     <strong className="billing-discount-amount">
@@ -1454,10 +1554,14 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
 
                                                 <td>{item.quantity}</td>
 
-                                                <td>{money(item.price)}</td>
+                                                <td>
+                                                    {money(item.discountedPrice)}
+                                                </td>
 
                                                 <td>
-                                                    {money(item.price * item.quantity)}
+                                                    {money(
+                                                        item.discountedPrice * item.quantity
+                                                    )}
                                                 </td>
 
                                             </tr>
@@ -1480,7 +1584,7 @@ const [loadingCustomers, setLoadingCustomers] = useState(false);
                                 </p>
 
                                 <p>
-                                    Discount ({receipt.discountPercentage}%)
+                                    Bill Discount ({receipt.discountPercentage}%)
                                     <strong>
                                         - {money(receipt.discount)}
                                     </strong>

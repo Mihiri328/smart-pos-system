@@ -49,7 +49,7 @@ if (
     const ids = [...normalized.keys()];
     const placeholders = ids.map(() => "?").join(",");
     const [stockRows] = await connection.query(
-      `SELECT item_id, item_name, unit_price, quantity
+      `SELECT item_id, item_discount, item_name, unit_price, quantity
        FROM item
        WHERE item_id IN (${placeholders})
        FOR UPDATE`,
@@ -88,15 +88,44 @@ if (
       });
     }
 
-    let subtotal = 0;
-    const orderLines = [];
-    for (const [itemId, quantity] of normalized.entries()) {
-      const item = stockById.get(itemId);
-      const unitPrice = Number(item.unit_price);
-      const lineTotal = unitPrice * quantity;
-      subtotal += lineTotal;
-      orderLines.push({ itemId, quantity, unitPrice, lineTotal });
-    }
+   let subtotal = 0;
+const orderLines = [];
+
+for (const [itemId, quantity] of normalized.entries()) {
+
+    const item = stockById.get(itemId);
+
+    const originalPrice = Number(item.unit_price);
+
+    const itemDiscount = Math.min(
+        100,
+        Math.max(0, Number(item.item_discount) || 0)
+    );
+
+    const unitPrice = Number(
+        (
+            originalPrice -
+            (originalPrice * itemDiscount / 100)
+        ).toFixed(2)
+    );
+
+    const lineTotal = Number(
+        (unitPrice * quantity).toFixed(2)
+    );
+
+    subtotal += lineTotal;
+
+    orderLines.push({
+        itemId,
+        quantity,
+        originalPrice,
+        itemDiscount,
+        unitPrice,
+        lineTotal
+    });
+}
+
+subtotal = Number(subtotal.toFixed(2));
 
     const finalDiscount = Math.min(safeDiscount, subtotal);
     const totalAmount = Number((subtotal - finalDiscount).toFixed(2));

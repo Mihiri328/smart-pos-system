@@ -24,12 +24,23 @@ async function createOrder(req, res) {
     normalized.set(itemId, (normalized.get(itemId) || 0) + quantity);
   }
 
-  const safeDiscount = Number(discount);
-  const safePaid = Number(amount_paid);
-  if (!Number.isFinite(safeDiscount) || safeDiscount < 0 ||
-      !Number.isFinite(safePaid) || safePaid < 0) {
-    return res.status(400).json({ message: "Invalid discount or payment amount." });
-  }
+ const safeDiscount = Number(discount);
+const normalizedPaymentMethod = String(payment_method).trim();
+
+const safePaid = normalizedPaymentMethod === "Card"
+    ? null
+    : Number(amount_paid);
+
+if (
+    !Number.isFinite(safeDiscount) ||
+    safeDiscount < 0 ||
+    (normalizedPaymentMethod !== "Card" &&
+        (!Number.isFinite(safePaid) || safePaid < 0))
+) {
+    return res.status(400).json({
+        message: "Invalid discount or payment amount."
+    });
+}
 
   const connection = await db.getConnection();
   try {
@@ -89,12 +100,21 @@ async function createOrder(req, res) {
 
     const finalDiscount = Math.min(safeDiscount, subtotal);
     const totalAmount = Number((subtotal - finalDiscount).toFixed(2));
-    if (safePaid < totalAmount) {
-      await connection.rollback();
-      return res.status(400).json({
+    const receivedAmount = normalizedPaymentMethod === "Card"
+    ? totalAmount
+    : safePaid;
+
+const changeAmount = normalizedPaymentMethod === "Card"
+    ? 0
+    : Number(Math.max(0, receivedAmount - totalAmount).toFixed(2));
+
+if (receivedAmount < totalAmount) {
+    await connection.rollback();
+
+    return res.status(400).json({
         message: `Insufficient payment. Amount due is ${totalAmount.toFixed(2)}.`
-      });
-    }
+    });
+}
 
     // Four-digit random suffix. Retry if the generated order number already exists.
     let orderNo;
@@ -114,8 +134,7 @@ const currentDate = new Intl.DateTimeFormat("en-CA", {
           `INSERT INTO orders
            (order_no, date, subtotal, discount_price, amount, payment_method, amount_paid, change_amount)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [orderNo, currentDate, subtotal, finalDiscount, totalAmount,
-           payment_method, safePaid, Number((safePaid - totalAmount).toFixed(2))]
+          [ orderNo, currentDate, subtotal, finalDiscount, totalAmount, normalizedPaymentMethod, receivedAmount, changeAmount]
         );
         const orderId = result.insertId;
         for (const line of orderLines) {
@@ -147,9 +166,7 @@ const currentDate = new Intl.DateTimeFormat("en-CA", {
             subtotal,
             discount: finalDiscount,
             total_amount: totalAmount,
-            payment_method,
-            amount_paid: safePaid,
-            change_amount: Number((safePaid - totalAmount).toFixed(2))
+            payment_method: normalizedPaymentMethod, amount_paid: receivedAmount, change_amount: changeAmount
           }
         });
       } catch (error) {

@@ -4,7 +4,8 @@ const db = require("../config/database");
 const getAllSales = async (req, res) => {
     try {
         const {
-            date,
+            fromDate, 
+            toDate,
             orderNo,
             paymentMethod,
             page = 1,
@@ -20,10 +21,15 @@ const getAllSales = async (req, res) => {
         const salesConditions = [];
         const salesParams = [];
 
-        if (date) {
-            salesConditions.push("DATE(o.date) = ?");
-            salesParams.push(date);
+        if (fromDate) {
+            salesConditions.push("o.date >= ?");
+            salesParams.push(`${fromDate} 00:00:00`);
         }
+            
+            if (toDate) {
+                salesConditions.push("o.date < DATE_ADD(?, INTERVAL 1 DAY)");
+                salesParams.push(toDate);
+            }
 
         if (orderNo) {
             salesConditions.push("o.order_no LIKE ?");

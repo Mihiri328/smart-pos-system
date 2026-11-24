@@ -94,7 +94,9 @@ export default function SalesHistory({ onNavigate, onLogout }) {
   const rowsPerPage = 10;
 
   // Filters
-  const [dateFilter, setDateFilter] = useState("");
+  const [fromDateFilter, setFromDateFilter] = useState("");
+  const [toDateFilter, setToDateFilter] = useState("");
+  const dateRangeInvalid = fromDateFilter && toDateFilter && fromDateFilter > toDateFilter;
   const [orderFilter, setOrderFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
 
@@ -122,8 +124,12 @@ export default function SalesHistory({ onNavigate, onLogout }) {
         params.append("page", page);
         params.append("limit", rowsPerPage);
 
-        if (dateFilter) {
-          params.append("date", dateFilter);
+        if (fromDateFilter) {
+          params.append("fromDate", fromDateFilter);
+        }
+
+        if (toDateFilter) {
+          params.append("toDate", toDateFilter);
         }
 
         if (orderFilter.trim()) {
@@ -185,12 +191,20 @@ export default function SalesHistory({ onNavigate, onLogout }) {
       }
     };
 
+    if (dateRangeInvalid) {
+    setLoading(false);
+    setSales([]);
+    setTotalRecords(0);
+    setTotalPages(1);
+    setNotice("From Date cannot be greater than To Date.");
+
+    return () => controller.abort();}
     fetchSales();
 
     return () => {
       controller.abort();
     };
-  }, [page, dateFilter, orderFilter, paymentFilter]);
+  }, [page, fromDateFilter, toDateFilter, orderFilter, paymentFilter]);
 
   // Fetch individual transaction details
   async function handleViewSale(orderId) {
@@ -228,12 +242,15 @@ export default function SalesHistory({ onNavigate, onLogout }) {
   }
 
   // Clear filters
+
   function clearFilters() {
-    setDateFilter("");
+    setFromDateFilter("");
+    setToDateFilter("");
     setOrderFilter("");
     setPaymentFilter("");
     setPage(1);
-  }
+    setNotice("");
+}
 
   // Export current page sales to CSV
   function exportCSV() {
@@ -468,19 +485,35 @@ export default function SalesHistory({ onNavigate, onLogout }) {
             <div className="sh-filters">
 
               {/* Date filter */}
-              <div className="sh-filter-group">
-                <label>Date</label>
+             {/* From Date Filter */}
+<div className="sh-filter-group">
+    <label>From Date</label>
 
-                <input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => {
-                    setDateFilter(e.target.value);
-                    setPage(1);
-                  }}
-                />
-              </div>
+    <input
+        type="date"
+        value={fromDateFilter}
+        max={toDateFilter || undefined}
+        onChange={(e) => {
+            setFromDateFilter(e.target.value);
+            setPage(1);
+        }}
+    />
+</div>
 
+{/* To Date Filter */}
+<div className="sh-filter-group">
+    <label>To Date</label>
+
+    <input
+        type="date"
+        value={toDateFilter}
+        min={fromDateFilter || undefined}
+        onChange={(e) => {
+            setToDateFilter(e.target.value);
+            setPage(1);
+        }}
+    />
+    </div>
               {/* Order number filter */}
               <div className="sh-filter-group">
                 <label>Order No</label>

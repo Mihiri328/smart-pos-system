@@ -5,7 +5,7 @@ function makeOrderNo() {
 }
 
 async function createOrder(req, res) {
-  const { items, discount = 0, payment_method = "Cash", amount_paid } = req.body || {};
+  const { items, discount = 0, payment_method = "Cash", amount_paid , customer_id = null } = req.body || {};
 
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ message: "Please add at least one item." });
@@ -24,12 +24,23 @@ async function createOrder(req, res) {
     normalized.set(itemId, (normalized.get(itemId) || 0) + quantity);
   }
 
-  const safeDiscount = Number(discount);
-  const safePaid = Number(amount_paid);
-  if (!Number.isFinite(safeDiscount) || safeDiscount < 0 ||
-      !Number.isFinite(safePaid) || safePaid < 0) {
-    return res.status(400).json({ message: "Invalid discount or payment amount." });
-  }
+ const safeDiscount = Number(discount);
+const normalizedPaymentMethod = String(payment_method).trim();
+
+const safePaid = normalizedPaymentMethod === "Card"
+    ? null
+    : Number(amount_paid);
+
+if (
+    !Number.isFinite(safeDiscount) ||
+    safeDiscount < 0 ||
+    (normalizedPaymentMethod !== "Card" &&
+        (!Number.isFinite(safePaid) || safePaid < 0))
+) {
+    return res.status(400).json({
+        message: "Invalid discount or payment amount."
+    });
+}
 
   const connection = await db.getConnection();
   try {
@@ -38,7 +49,7 @@ async function createOrder(req, res) {
     const ids = [...normalized.keys()];
     const placeholders = ids.map(() => "?").join(",");
     const [stockRows] = await connection.query(
-      `SELECT item_id, item_name, unit_price, quantity
+      `SELECT item_id, item_discount, item_name, unit_price, quantity
        FROM item
        WHERE item_id IN (${placeholders})
        FOR UPDATE`,
@@ -77,24 +88,62 @@ async function createOrder(req, res) {
       });
     }
 
-    let subtotal = 0;
-    const orderLines = [];
-    for (const [itemId, quantity] of normalized.entries()) {
-      const item = stockById.get(itemId);
-      const unitPrice = Number(item.unit_price);
-      const lineTotal = unitPrice * quantity;
-      subtotal += lineTotal;
-      orderLines.push({ itemId, quantity, unitPrice, lineTotal });
-    }
+   let subtotal = 0;
+const orderLines = [];
+
+for (const [itemId, quantity] of normalized.entries()) {
+
+    const item = stockById.get(itemId);
+
+    const originalPrice = Number(item.unit_price);
+
+    const itemDiscount = Math.min(
+        100,
+        Math.max(0, Number(item.item_discount) || 0)
+    );
+
+    const unitPrice = Number(
+        (
+            originalPrice -
+            (originalPrice * itemDiscount / 100)
+        ).toFixed(2)
+    );
+
+    const lineTotal = Number(
+        (unitPrice * quantity).toFixed(2)
+    );
+
+    subtotal += lineTotal;
+
+    orderLines.push({
+        itemId,
+        quantity,
+        originalPrice,
+        itemDiscount,
+        unitPrice,
+        lineTotal
+    });
+}
+
+subtotal = Number(subtotal.toFixed(2));
 
     const finalDiscount = Math.min(safeDiscount, subtotal);
     const totalAmount = Number((subtotal - finalDiscount).toFixed(2));
-    if (safePaid < totalAmount) {
-      await connection.rollback();
-      return res.status(400).json({
+    const receivedAmount = normalizedPaymentMethod === "Card"
+    ? totalAmount
+    : safePaid;
+
+const changeAmount = normalizedPaymentMethod === "Card"
+    ? 0
+    : Number(Math.max(0, receivedAmount - totalAmount).toFixed(2));
+
+if (receivedAmount < totalAmount) {
+    await connection.rollback();
+
+    return res.status(400).json({
         message: `Insufficient payment. Amount due is ${totalAmount.toFixed(2)}.`
-      });
-    }
+    });
+}
 
     // Four-digit random suffix. Retry if the generated order number already exists.
     let orderNo;
@@ -112,10 +161,9 @@ const currentDate = new Intl.DateTimeFormat("en-CA", {
       try {
         const [result] = await connection.execute(
           `INSERT INTO orders
-           (order_no, date, subtotal, discount_price, amount, payment_method, amount_paid, change_amount)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [orderNo, currentDate, subtotal, finalDiscount, totalAmount,
-           payment_method, safePaid, Number((safePaid - totalAmount).toFixed(2))]
+           (order_no, date, customer_id, subtotal, discount_price, amount, payment_method, amount_paid, change_amount)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [ orderNo, currentDate, customer_id || null, subtotal, finalDiscount, totalAmount, normalizedPaymentMethod, receivedAmount, changeAmount]
         );
         const orderId = result.insertId;
         for (const line of orderLines) {
@@ -147,9 +195,7 @@ const currentDate = new Intl.DateTimeFormat("en-CA", {
             subtotal,
             discount: finalDiscount,
             total_amount: totalAmount,
-            payment_method,
-            amount_paid: safePaid,
-            change_amount: Number((safePaid - totalAmount).toFixed(2))
+            payment_method: normalizedPaymentMethod, amount_paid: receivedAmount, change_amount: changeAmount
           }
         });
       } catch (error) {
@@ -171,4 +217,29 @@ const currentDate = new Intl.DateTimeFormat("en-CA", {
   }
 }
 
-module.exports = { createOrder };
+async function getCustomers(req, res) {
+    try {
+        const [customers] = await db.query(`
+            SELECT
+                id,
+                name
+            FROM customers
+            ORDER BY name ASC
+        `);
+
+        return res.status(200).json({
+            success: true,
+            customers
+        });
+
+    } catch (error) {
+        console.error("Get customers error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to retrieve customers."
+        });
+    }
+}
+
+module.exports = { createOrder, getCustomers };

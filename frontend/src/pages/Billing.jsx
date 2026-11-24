@@ -29,13 +29,12 @@ import {
 import {
     getBillingItems,
     getBillingCategories,
-    createBillingOrder
+    createBillingOrder,
+    getBillingCustomers
 } from "../services/billingService";
-
 
 // ======================================
 // PRODUCT IMAGES
-// Images are located in src/images
 // ======================================
 
 const productImages = import.meta.glob("../img/*", {
@@ -46,9 +45,7 @@ const productImages = import.meta.glob("../img/*", {
 
 const resolveProductImage = (imagePath) => {
 
-    if (!imagePath) {
-        return "";
-    }
+    if (!imagePath) return "";
 
     if (/^(https?:|data:|blob:)/i.test(imagePath)) {
         return imagePath;
@@ -68,24 +65,22 @@ const resolveProductImage = (imagePath) => {
     return matchedImage ? matchedImage[1] : "";
 };
 
-
 // ======================================
 // NAVIGATION
 // ======================================
 
 const navigation = [
-  { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
-  { label: "POS Billing", icon: ShoppingCart, page: "billing" },
-  { label: "Products Management", icon: Package, page: "products" },
-  { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
-  { label: "Suppliers Management", icon: Truck, page: "suppliers" },
-  { label: "Purchase Orders", page: "purchase_orders", icon: ClipboardList },
-  { label: "Customer Management", icon: Users, page: "customers" },
-  { label: "Sales History", icon: History, page: "sales_history" },
-  { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
-  { label: "Settings", icon: Settings, page: "settings" }
+    { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
+    { label: "POS Billing", icon: ShoppingCart, page: "billing" },
+    { label: "Products Management", icon: Package, page: "products" },
+    { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
+    { label: "Suppliers Management", icon: Truck, page: "suppliers" },
+    { label: "Purchase Orders", page: "purchase_orders", icon: ClipboardList },
+    { label: "Customer Management", icon: Users, page: "customers" },
+    { label: "Sales History", icon: History, page: "sales_history" },
+    { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
+    { label: "Settings", icon: Settings, page: "settings" }
 ];
-
 
 // ======================================
 // COMMON FUNCTIONS
@@ -97,18 +92,43 @@ const money = (amount) =>
         maximumFractionDigits: 2
     })}`;
 
+// ======================================
+// MAP PRODUCT
+// ======================================
 
-const mapProduct = (row) => ({
-    id: Number(row.item_id ?? row.id),
-    name: row.item_name ?? row.name ?? "",
-    sku: row.item_code ?? row.sku ?? `ITEM-${row.item_id ?? row.id}`,
-    category: row.category || "Uncategorized",
-    unit: row.unit || "Unit",
-    price: Number(row.unit_price ?? row.price ?? 0),
-    stock: Number(row.quantity ?? row.stock ?? 0),
-    image: resolveProductImage(row.image_path ?? row.image)
-});
+const mapProduct = (row) => {
 
+    const price = Number(row.unit_price ?? row.price ?? 0);
+
+    const discountPercentage = Math.min(
+        100,
+        Math.max(0, Number(row.item_discount) || 0)
+    );
+
+    const discountedPrice = discountPercentage > 0
+        ? price - (price * discountPercentage / 100)
+        : price;
+
+    return {
+        id: Number(row.item_id ?? row.id),
+        name: row.item_name ?? row.name ?? "",
+        sku: row.item_code ?? row.sku ?? `ITEM-${row.item_id ?? row.id}`,
+        category: row.category || "Uncategorized",
+        unit: row.unit || "Unit",
+
+        // Original price
+        price,
+
+        // Item discount percentage
+        discountPercentage,
+
+        // Price after item discount
+        discountedPrice: Number(discountedPrice.toFixed(2)),
+
+        stock: Number(row.quantity ?? row.stock ?? 0),
+        image: resolveProductImage(row.image_path ?? row.image)
+    };
+};
 
 // ======================================
 // BILLING COMPONENT
@@ -117,7 +137,16 @@ const mapProduct = (row) => ({
 export default function Billing({ onNavigate, onLogout }) {
 
     // ----------------------------------
-    // STATES
+    // CUSTOMER STATES
+    // ----------------------------------
+
+    const [customerType, setCustomerType] = useState("Non-Registered");
+    const [customers, setCustomers] = useState([]);
+    const [selectedCustomer, setSelectedCustomer] = useState("");
+    const [loadingCustomers, setLoadingCustomers] = useState(false);
+
+    // ----------------------------------
+    // PRODUCT STATES
     // ----------------------------------
 
     const [products, setProducts] = useState([]);
@@ -126,11 +155,23 @@ export default function Billing({ onNavigate, onLogout }) {
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All");
 
+    // ----------------------------------
+    // CART STATES
+    // ----------------------------------
+
     const [cart, setCart] = useState([]);
+
+    // ----------------------------------
+    // PAYMENT STATES
+    // ----------------------------------
 
     const [discount, setDiscount] = useState("0");
     const [paymentMethod, setPaymentMethod] = useState("Cash");
     const [amountPaid, setAmountPaid] = useState("");
+
+    // ----------------------------------
+    // GENERAL STATES
+    // ----------------------------------
 
     const [message, setMessage] = useState("");
     const [receipt, setReceipt] = useState(null);
@@ -141,10 +182,57 @@ export default function Billing({ onNavigate, onLogout }) {
     const [mobileMenu, setMobileMenu] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
 
+    // ==================================
+    // LOAD CUSTOMERS
+    // ==================================
 
-    // ----------------------------------
+    useEffect(() => {
+
+        if (customerType !== "Registered") {
+            return;
+        }
+
+        const controller = new AbortController();
+
+        const loadCustomers = async () => {
+
+            try {
+
+                setLoadingCustomers(true);
+
+                const result = await getBillingCustomers({
+                    signal: controller.signal
+                });
+
+                const customerList = Array.isArray(result.customers)
+                    ? result.customers
+                    : [];
+
+                setCustomers(customerList);
+
+            } catch (error) {
+
+                if (error.name !== "AbortError") {
+                    setMessage(error.message || "Unable to load customers.");
+                }
+
+            } finally {
+
+                if (!controller.signal.aborted) {
+                    setLoadingCustomers(false);
+                }
+            }
+        };
+
+        loadCustomers();
+
+        return () => controller.abort();
+
+    }, [customerType]);
+
+    // ==================================
     // LOAD CATEGORIES
-    // ----------------------------------
+    // ==================================
 
     useEffect(() => {
 
@@ -181,11 +269,9 @@ export default function Billing({ onNavigate, onLogout }) {
 
     }, []);
 
-
-    // ----------------------------------
+    // ==================================
     // LOAD PRODUCTS
-    // Backend handles search and filtering
-    // ----------------------------------
+    // ==================================
 
     useEffect(() => {
 
@@ -231,36 +317,41 @@ export default function Billing({ onNavigate, onLogout }) {
 
     }, [search, category]);
 
-
-    // ----------------------------------
+    // ==================================
     // FILTERED PRODUCTS
-    // Backend already filters these records
-    // ----------------------------------
+    // ==================================
 
     const filteredProducts = products;
 
-
-    // ----------------------------------
+    // ==================================
     // CART CALCULATIONS
-    // ----------------------------------
+    // ==================================
 
     const subtotal = useMemo(
         () =>
             cart.reduce(
-                (sum, item) => sum + item.price * item.quantity,
+                (sum, item) =>
+                    sum + item.discountedPrice * item.quantity,
                 0
             ),
         [cart]
     );
 
-    const discountAmount = Math.min(
-        subtotal,
-        Math.max(0, Number(discount) || 0)
+    // Additional bill-level discount
+    const discountPercentage = Number(discount) || 0;
+
+    const discountAmount =
+        (subtotal * discountPercentage) / 100;
+
+    const total = Math.max(
+        0,
+        subtotal - discountAmount
     );
 
-    const total = subtotal - discountAmount;
-
-    const paid = Math.max(0, Number(amountPaid) || 0);
+    const paid =
+        paymentMethod === "Card"
+            ? total
+            : Math.max(0, Number(amountPaid) || 0);
 
     const balance = Math.max(0, paid - total);
 
@@ -271,19 +362,16 @@ export default function Billing({ onNavigate, onLogout }) {
         0
     );
 
-
-    // ----------------------------------
+    // ==================================
     // NAVIGATION
-    // ----------------------------------
+    // ==================================
 
     function navigate(page) {
 
         setMobileMenu(false);
         setMessage("");
 
-        if (page === "billing") {
-            return;
-        }
+        if (page === "billing") return;
 
         if (onNavigate) {
             onNavigate(page);
@@ -294,10 +382,9 @@ export default function Billing({ onNavigate, onLogout }) {
         }
     }
 
-
-    // ----------------------------------
+    // ==================================
     // LOGOUT
-    // ----------------------------------
+    // ==================================
 
     function handleLogout() {
 
@@ -310,10 +397,40 @@ export default function Billing({ onNavigate, onLogout }) {
         }
     }
 
+    // ==================================
+    // DISCOUNT INPUT
+    // ==================================
 
-    // ----------------------------------
+    function handleDiscountChange(event) {
+
+        const value = event.target.value;
+
+        if (value === "") {
+            setDiscount("");
+            return;
+        }
+
+        const numberValue = Number(value);
+
+        if (
+            Number.isFinite(numberValue) &&
+            numberValue >= 0 &&
+            numberValue <= 50
+        ) {
+            setDiscount(value);
+        }
+    }
+
+    function handleDiscountBlur() {
+
+        if (discount === "") {
+            setDiscount("0");
+        }
+    }
+
+    // ==================================
     // ADD PRODUCT TO CART
-    // ----------------------------------
+    // ==================================
 
     function addToCart(product) {
 
@@ -363,10 +480,9 @@ export default function Billing({ onNavigate, onLogout }) {
         }
     }
 
-
-    // ----------------------------------
+    // ==================================
     // CHANGE CART QUANTITY
-    // ----------------------------------
+    // ==================================
 
     function changeQuantity(productId, change) {
 
@@ -401,10 +517,9 @@ export default function Billing({ onNavigate, onLogout }) {
         );
     }
 
-
-    // ----------------------------------
+    // ==================================
     // REMOVE CART ITEM
-    // ----------------------------------
+    // ==================================
 
     function removeItem(productId) {
 
@@ -416,10 +531,9 @@ export default function Billing({ onNavigate, onLogout }) {
         setMessage("");
     }
 
-
-    // ----------------------------------
+    // ==================================
     // CLEAR CART
-    // ----------------------------------
+    // ==================================
 
     function clearCart() {
 
@@ -430,10 +544,9 @@ export default function Billing({ onNavigate, onLogout }) {
         setReceipt(null);
     }
 
-
-    // ----------------------------------
+    // ==================================
     // REFRESH PRODUCTS
-    // ----------------------------------
+    // ==================================
 
     async function refreshProducts() {
 
@@ -449,22 +562,31 @@ export default function Billing({ onNavigate, onLogout }) {
         setProducts(rows.map(mapProduct));
     }
 
-
-    // ----------------------------------
+    // ==================================
     // COMPLETE ORDER
-    // ----------------------------------
+    // ==================================
 
     async function completeSale() {
 
         setMessage("");
 
-        if (submittingOrder) {
+        if (submittingOrder) return;
+
+        if (cart.length === 0) {
+            setMessage("Please add at least one product.");
             return;
         }
 
-        if (cart.length === 0) {
+        if (
+            customerType === "Registered" &&
+            !selectedCustomer
+        ) {
+            setMessage("Please select a registered customer.");
+            return;
+        }
 
-            setMessage("Please add at least one product.");
+        if (discountPercentage < 0 || discountPercentage > 50) {
+            setMessage("Discount must be between 0% and 50%.");
             return;
         }
 
@@ -478,9 +600,17 @@ export default function Billing({ onNavigate, onLogout }) {
         }
 
         const orderData = {
-            discount: discountAmount,
+
+            customer_id:
+                customerType === "Registered" && selectedCustomer
+                    ? Number(selectedCustomer)
+                    : null,
+
+            discount: Number(discountAmount.toFixed(2)),
+
             payment_method: paymentMethod,
-            amount_paid: paid,
+
+            amount_paid: Number(paid.toFixed(2)),
 
             items: cart.map((item) => ({
                 item_id: item.id,
@@ -492,13 +622,12 @@ export default function Billing({ onNavigate, onLogout }) {
 
             setSubmittingOrder(true);
 
-            // Save order through backend service
             const result = await createBillingOrder(orderData);
 
             const savedOrder = result.order || result.data || result;
 
-            // Prepare receipt using the successful API response
             const newReceipt = {
+
                 invoiceNo:
                     savedOrder.order_no ||
                     savedOrder.orderNo ||
@@ -515,6 +644,7 @@ export default function Billing({ onNavigate, onLogout }) {
 
                 subtotal,
                 discount: discountAmount,
+                discountPercentage,
                 total,
                 amountPaid: paid,
                 change: balance,
@@ -527,11 +657,13 @@ export default function Billing({ onNavigate, onLogout }) {
             setDiscount("0");
             setAmountPaid("");
 
+            setCustomerType("Non-Registered");
+            setSelectedCustomer("");
+
             setMessage(
                 result.message || "Order completed successfully."
             );
 
-            // Reload products to get updated stock
             await refreshProducts();
 
         } catch (error) {
@@ -545,7 +677,6 @@ export default function Billing({ onNavigate, onLogout }) {
             setSubmittingOrder(false);
         }
     }
-
 
     // ==================================
     // JSX
@@ -640,7 +771,6 @@ export default function Billing({ onNavigate, onLogout }) {
 
             </aside>
 
-
             {/* MOBILE BACKDROP */}
 
             {mobileMenu && (
@@ -653,7 +783,6 @@ export default function Billing({ onNavigate, onLogout }) {
                 />
 
             )}
-
 
             {/* MAIN CONTENT */}
 
@@ -750,10 +879,6 @@ export default function Billing({ onNavigate, onLogout }) {
 
                 </header>
 
-
-                
-
-
                 <div className="billing-content">
 
                     {/* PAGE HEADING */}
@@ -770,13 +895,9 @@ export default function Billing({ onNavigate, onLogout }) {
 
                     </div>
 
-
                     <div className="billing-layout">
 
-
-                        {/* ==================================
-                            PRODUCTS SECTION
-                        ================================== */}
+                        {/* PRODUCTS SECTION */}
 
                         <section className="billing-products no-print">
 
@@ -795,7 +916,6 @@ export default function Billing({ onNavigate, onLogout }) {
                                 </span>
 
                             </div>
-
 
                             {/* SEARCH AND CATEGORY */}
 
@@ -816,7 +936,6 @@ export default function Billing({ onNavigate, onLogout }) {
 
                                 </label>
 
-
                                 <select
                                     aria-label="Filter by category"
                                     value={category}
@@ -828,18 +947,16 @@ export default function Billing({ onNavigate, onLogout }) {
                                     {categories.map((item) => (
 
                                         <option key={item} value={item}>
-
                                             {item === "All"
                                                 ? "All Categories"
                                                 : item}
-
                                         </option>
+
                                     ))}
 
                                 </select>
 
                             </div>
-
 
                             {/* PRODUCT CARDS */}
 
@@ -896,7 +1013,6 @@ export default function Billing({ onNavigate, onLogout }) {
 
                                                     </div>
 
-
                                                     <span
                                                         className={`billing-stock-label ${
                                                             product.stock === 0
@@ -904,15 +1020,25 @@ export default function Billing({ onNavigate, onLogout }) {
                                                                 : ""
                                                         }`}
                                                     >
-
                                                         {product.stock > 0
                                                             ? `${product.stock} in stock`
                                                             : "Out of stock"}
-
                                                     </span>
 
-                                                </div>
+                                                    {/* DISCOUNT BADGE */}
 
+                                                   {product.discountPercentage > 0 && (
+                                                     <div className="billing-discount-badge">
+                                                        <span className="billing-discount-text">
+                                                             {product.discountPercentage}%
+                                                             </span>
+                                                             <span className="billing-discount-label">
+                                                                OFF
+                                                                </span>
+                                                                </div>
+                                                            )}
+
+                                                </div>
 
                                                 <h3>{product.name}</h3>
 
@@ -924,21 +1050,35 @@ export default function Billing({ onNavigate, onLogout }) {
                                                     {product.category}
                                                 </p>
 
-
                                                 <div className="billing-product-card-bottom">
 
-                                                    <div>
+                                                    <div className="billing-product-price">
 
-                                                        <strong>
-                                                            {money(product.price)}
-                                                        </strong>
+                                                        {product.discountPercentage > 0 ? (
+
+                                                            <>
+                                                                <span className="billing-original-price">
+                                                                    {money(product.price)}
+                                                                </span>
+
+                                                                <strong className="billing-discounted-price">
+                                                                    {money(product.discountedPrice)}
+                                                                </strong>
+                                                            </>
+
+                                                        ) : (
+
+                                                            <strong>
+                                                                {money(product.price)}
+                                                            </strong>
+
+                                                        )}
 
                                                         <small>
                                                             / {product.unit}
                                                         </small>
 
                                                     </div>
-
 
                                                     <button
                                                         type="button"
@@ -964,11 +1104,7 @@ export default function Billing({ onNavigate, onLogout }) {
 
                         </section>
 
-
-
-                        {/* ==================================
-                            CURRENT BILL
-                        ================================== */}
+                        {/* CURRENT BILL */}
 
                         <aside className="billing-cart">
 
@@ -989,7 +1125,6 @@ export default function Billing({ onNavigate, onLogout }) {
                                 </button>
 
                             </div>
-
 
                             {/* CART ITEMS */}
 
@@ -1022,10 +1157,19 @@ export default function Billing({ onNavigate, onLogout }) {
 
                                                 <strong>{item.name}</strong>
 
-                                                <span>
-                                                    {money(item.price)} each
-                                                </span>
+                                                <span className="billing-cart-item-price">
 
+                                                    {item.discountPercentage > 0 && (
+                                                        <del>
+                                                            {money(item.price)}
+                                                        </del>
+                                                    )}
+
+                                                    <strong>
+                                                        {money(item.discountedPrice)} each
+                                                    </strong>
+
+                                                </span>
 
                                                 <div className="billing-quantity-controls no-print">
 
@@ -1056,11 +1200,10 @@ export default function Billing({ onNavigate, onLogout }) {
 
                                             </div>
 
-
                                             <div className="billing-cart-item-total">
 
                                                 <strong>
-                                                    {money(item.price * item.quantity)}
+                                                    {money(item.discountedPrice * item.quantity)}
                                                 </strong>
 
                                                 <button
@@ -1081,11 +1224,11 @@ export default function Billing({ onNavigate, onLogout }) {
 
                             </div>
 
-
-
                             {/* BILL CALCULATION */}
 
                             <div className="billing-calculation">
+
+                                {/* SUBTOTAL */}
 
                                 <div className="billing-calculation-row">
 
@@ -1095,35 +1238,130 @@ export default function Billing({ onNavigate, onLogout }) {
 
                                 </div>
 
+                                {/* CUSTOMER SELECTION */}
 
-                                <label className="billing-discount-field no-print">
+                                <div className="billing-customer-section">
 
-                                    <span>Discount (Rs.)</span>
+                                    <h3>Customer Type</h3>
+
+                                    <div className="billing-customer-radio-group">
+
+                                        <label>
+                                            <input
+                                                type="radio"
+                                                name="customerType"
+                                                value="Registered"
+                                                checked={customerType === "Registered"}
+                                                onChange={() => {
+                                                    setCustomerType("Registered");
+                                                    setSelectedCustomer("");
+                                                }}
+                                            />
+                                            Registered
+                                        </label>
+
+                                        <label>
+                                            <input
+                                                type="radio"
+                                                name="customerType"
+                                                value="Non-Registered"
+                                                checked={customerType === "Non-Registered"}
+                                                onChange={() => {
+                                                    setCustomerType("Non-Registered");
+                                                    setSelectedCustomer("");
+                                                }}
+                                            />
+                                            Non-Registered
+                                        </label>
+
+                                    </div>
+
+                                    {/* REGISTERED CUSTOMER DROPDOWN */}
+
+                                    {customerType === "Registered" && (
+
+                                        <div className="billing-payment-field">
+
+                                            <label htmlFor="billingCustomer">
+                                                Select Customer
+                                            </label>
+
+                                            <select
+                                                id="billingCustomer"
+                                                value={selectedCustomer}
+                                                onChange={(event) =>
+                                                    setSelectedCustomer(event.target.value)
+                                                }
+                                            >
+
+                                                <option value="">
+                                                    Select a customer
+                                                </option>
+
+                                                {customers.map((customer) => (
+
+                                                    <option
+                                                        key={customer.id}
+                                                        value={customer.id}
+                                                    >
+                                                        {customer.name}
+                                                    </option>
+
+                                                ))}
+
+                                            </select>
+
+                                            {loadingCustomers && (
+                                                <small>Loading customers...</small>
+                                            )}
+
+                                            {!loadingCustomers && customers.length === 0 && (
+                                                <small>No registered customers found.</small>
+                                            )}
+
+                                        </div>
+
+                                    )}
+
+                                </div>
+
+                                {/* BILL DISCOUNT */}
+
+                                <div className="billing-payment-field no-print">
+
+                                    <label htmlFor="discount">
+                                        Discount (%)
+                                    </label>
 
                                     <input
+                                        id="discount"
                                         type="number"
                                         min="0"
-                                        max={subtotal}
+                                        max="50"
+                                        step="1"
                                         value={discount}
-                                        onChange={(event) => {
-                                            setDiscount(event.target.value);
-                                            setReceipt(null);
-                                        }}
+                                        onChange={handleDiscountChange}
+                                        onBlur={handleDiscountBlur}
+                                        placeholder="Enter discount percentage"
                                     />
 
-                                </label>
+                                </div>
 
+                                {/* DISCOUNT AMOUNT */}
 
                                 <div className="billing-calculation-row">
 
-                                    <span>Discount</span>
+                                    <span>
+                                        Bill Discount ({discountPercentage}%)
+                                    </span>
 
-                                    <strong>
+                                    <strong className="billing-discount-amount">
                                         - {money(discountAmount)}
                                     </strong>
 
                                 </div>
 
+                                {/* PAYMENT METHOD */}
 
                                 <label className="billing-payment-field no-print">
 
@@ -1131,51 +1369,55 @@ export default function Billing({ onNavigate, onLogout }) {
 
                                     <select
                                         value={paymentMethod}
-                                        onChange={(event) =>
-                                            setPaymentMethod(event.target.value)
-                                        }
+                                        onChange={(event) => {
+                                            setPaymentMethod(event.target.value);
+                                            setAmountPaid("");
+                                        }}
                                     >
 
                                         <option value="Cash">Cash</option>
 
                                         <option value="Card">Card</option>
 
-                                        <option value="Online">
-                                            Online Payment
-                                        </option>
-
                                     </select>
 
                                 </label>
 
+                                {/* AMOUNT PAID */}
 
-                                <label className="billing-payment-field no-print">
+                                {paymentMethod !== "Card" && (
 
-                                    <span>Amount Paid (Rs.)</span>
+                                    <label className="billing-payment-field no-print">
 
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={amountPaid}
-                                        onChange={(event) =>
-                                            setAmountPaid(event.target.value)
-                                        }
-                                        placeholder="Enter received amount"
-                                    />
+                                        <span>Amount Paid (Rs.)</span>
 
-                                </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={amountPaid}
+                                            onChange={(event) =>
+                                                setAmountPaid(event.target.value)
+                                            }
+                                            placeholder="Enter received amount"
+                                        />
 
+                                    </label>
+
+                                )}
+
+                                {/* FINAL TOTAL */}
 
                                 <div className="billing-calculation-row billing-total-row">
 
-                                    <span>Total Amount</span>
+                                    <span>Final Amount</span>
 
                                     <strong>{money(total)}</strong>
 
                                 </div>
 
+                                {/* BALANCE / AMOUNT DUE */}
 
-                                {paid > 0 && (
+                                {paymentMethod !== "Card" && paid > 0 && (
 
                                     <div className="billing-calculation-row">
 
@@ -1184,7 +1426,11 @@ export default function Billing({ onNavigate, onLogout }) {
                                         </span>
 
                                         <strong>
-                                            {money(paid >= total ? balance : amountDue)}
+                                            {money(
+                                                paid >= total
+                                                    ? balance
+                                                    : amountDue
+                                            )}
                                         </strong>
 
                                     </div>
@@ -1192,8 +1438,6 @@ export default function Billing({ onNavigate, onLogout }) {
                                 )}
 
                             </div>
-
-
 
                             {/* COMPLETE ORDER */}
 
@@ -1216,25 +1460,26 @@ export default function Billing({ onNavigate, onLogout }) {
                                         : "Complete Order"}
 
                                 </button>
+
                                 {/* MESSAGE */}
 
-                {message && (
+                                {message && (
 
-                    <div className="billing-message" role="status">
+                                    <div className="billing-message" role="status">
 
-                        <span>{message}</span>
+                                        <span>{message}</span>
 
-                        <button
-                            type="button"
-                            onClick={() => setMessage("")}
-                            aria-label="Dismiss message"
-                        >
-                            <X size={15} />
-                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setMessage("")}
+                                            aria-label="Dismiss message"
+                                        >
+                                            <X size={15} />
+                                        </button>
 
-                    </div>
+                                    </div>
 
-                )}
+                                )}
 
                             </div>
 
@@ -1242,11 +1487,7 @@ export default function Billing({ onNavigate, onLogout }) {
 
                     </div>
 
-
-
-                    {/* ==================================
-                        RECEIPT
-                    ================================== */}
+                    {/* RECEIPT */}
 
                     {receipt && (
 
@@ -1267,7 +1508,6 @@ export default function Billing({ onNavigate, onLogout }) {
                                 </span>
 
                             </div>
-
 
                             <div className="billing-receipt-meta">
 
@@ -1291,7 +1531,6 @@ export default function Billing({ onNavigate, onLogout }) {
 
                             </div>
 
-
                             <div className="billing-receipt-table-wrap">
 
                                 <table className="billing-receipt-table">
@@ -1305,7 +1544,6 @@ export default function Billing({ onNavigate, onLogout }) {
                                         </tr>
                                     </thead>
 
-
                                     <tbody>
 
                                         {receipt.items.map((item) => (
@@ -1316,10 +1554,14 @@ export default function Billing({ onNavigate, onLogout }) {
 
                                                 <td>{item.quantity}</td>
 
-                                                <td>{money(item.price)}</td>
+                                                <td>
+                                                    {money(item.discountedPrice)}
+                                                </td>
 
                                                 <td>
-                                                    {money(item.price * item.quantity)}
+                                                    {money(
+                                                        item.discountedPrice * item.quantity
+                                                    )}
                                                 </td>
 
                                             </tr>
@@ -1332,6 +1574,7 @@ export default function Billing({ onNavigate, onLogout }) {
 
                             </div>
 
+                            {/* RECEIPT TOTALS */}
 
                             <div className="billing-receipt-totals">
 
@@ -1341,12 +1584,14 @@ export default function Billing({ onNavigate, onLogout }) {
                                 </p>
 
                                 <p>
-                                    Discount
-                                    <strong>{money(receipt.discount)}</strong>
+                                    Bill Discount ({receipt.discountPercentage}%)
+                                    <strong>
+                                        - {money(receipt.discount)}
+                                    </strong>
                                 </p>
 
                                 <p>
-                                    Total
+                                    Final Amount
                                     <strong>{money(receipt.total)}</strong>
                                 </p>
 
@@ -1362,10 +1607,8 @@ export default function Billing({ onNavigate, onLogout }) {
 
                             </div>
 
-
                             <div className="billing-receipt-actions no-print">
 
-                              {/* Billing page pdf */}
                                 <button
                                     type="button"
                                     onClick={() => window.print()}
@@ -1388,7 +1631,6 @@ export default function Billing({ onNavigate, onLogout }) {
                     )}
 
                 </div>
-
 
                 <footer className="billing-footer no-print">
                     <span>

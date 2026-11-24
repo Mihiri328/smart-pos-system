@@ -124,13 +124,13 @@ async function getSalesPerformance(period = "Weekly") {
     return rows;
 }
 
-
 // PAYMENT METHODS
 async function getPaymentBreakdown() {
     const [rows] = await db.query(`
         SELECT
             payment_method,
-            COALESCE(SUM(amount), 0) AS total
+            COALESCE(SUM(amount), 0) AS total,
+            COUNT(order_id) AS bill_count
         FROM orders
         WHERE DATE(date) = CURDATE()
         GROUP BY payment_method

@@ -280,26 +280,13 @@ export default function Dashboard({ onNavigate, onLogout }) {
         return Number(payment?.total || 0);
     }
 
+    function getPaymentBillCount(method) {
+    const payment = dashboardData.paymentBreakdown.find(
+        (p) => p.payment_method === method
+    );
 
-    function getPaymentPercentage(method) {
-        if (paymentTotal === 0) return 0;
-
-        return Math.round(
-            (getPaymentAmount(method) / paymentTotal) * 100
-        );
-    }
-
-
-    const digitalPaymentAmount =
-        getPaymentAmount("QR Pay") +
-        getPaymentAmount("QR") +
-        getPaymentAmount("Digital");
-
-
-    const digitalPaymentPercentage =
-        getPaymentPercentage("QR Pay") +
-        getPaymentPercentage("QR") +
-        getPaymentPercentage("Digital");
+    return Number(payment?.bill_count || 0);
+}
 
 
     // ==============================
@@ -1151,14 +1138,14 @@ export default function Dashboard({ onNavigate, onLogout }) {
                                     </strong>
 
                                     <span className="sp-payment-percent">
-                                        {getPaymentPercentage("Cash")}%
+                                        {getPaymentBillCount("Cash")} Bills
                                     </span>
                                 </div>
 
                                 <div className="sp-payment-bar">
                                     <span
                                         style={{
-                                            width: `${getPaymentPercentage("Cash")}%`
+                                            width: `${getPaymentBillCount("Cash")}%`
                                         }}
                                     />
                                 </div>
@@ -1177,40 +1164,14 @@ export default function Dashboard({ onNavigate, onLogout }) {
                                     </strong>
 
                                     <span className="sp-payment-percent">
-                                        {getPaymentPercentage("Card")}%
+                                        {getPaymentBillCount("Card")} Bills
                                     </span>
                                 </div>
 
                                 <div className="sp-payment-bar green-bar">
                                     <span
                                         style={{
-                                            width: `${getPaymentPercentage("Card")}%`
-                                        }}
-                                    />
-                                </div>
-
-
-                                {/* QR / DIGITAL */}
-
-                                <div className="sp-payment-row">
-                                    <span className="sp-payment-label">
-                                        <QrCode size={16} />
-                                        QR / Digital
-                                    </span>
-
-                                    <strong>
-                                        {money(digitalPaymentAmount)}
-                                    </strong>
-
-                                    <span className="sp-payment-percent">
-                                        {digitalPaymentPercentage}%
-                                    </span>
-                                </div>
-
-                                <div className="sp-payment-bar orange-bar">
-                                    <span
-                                        style={{
-                                            width: `${digitalPaymentPercentage}%`
+                                            width: `${getPaymentBillCount("Card")}%`
                                         }}
                                     />
                                 </div>

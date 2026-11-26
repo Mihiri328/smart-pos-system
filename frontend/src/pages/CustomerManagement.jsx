@@ -17,31 +17,20 @@ import {
   ChevronDown,
   Menu,
   X,
-  CalendarDays,
   Plus,
   Filter,
   Pencil,
   Trash2,
   ChevronLeft,
   ChevronRight,
-  Crown,
-  UserRound,
   UserPlus,
   CheckCircle2,
 } from "lucide-react";
 
 import "../style.css";
 
-const initialCustomers = [
-  { id: 1, name: "Kasun Perera", phone: "0712345678", email: "kasun@gmail.com", spent: 24500, joined: "2026-09-02", status: "Active" },
-  { id: 2, name: "Nimali Fernando", phone: "0774567890", email: "nimali@gmail.com", spent: 18750, joined: "2026-09-05", status: "Active" },
-  { id: 3, name: "Amal Silva", phone: "0751234567", email: "amal@gmail.com", spent: 12500, joined: "2026-08-20", status: "Inactive" },
-  { id: 4, name: "Tharushi Jayawardena", phone: "0769876543", email: "tharushi@gmail.com", spent: 32400, joined: "2026-09-12", status: "Active" },
-  { id: 5, name: "Sahan Kumara", phone: "0723456789", email: "sahan@gmail.com", spent: 9800, joined: "2026-10-03", status: "Active" },
-  { id: 6, name: "Dilani Perera", phone: "0709876543", email: "dilani@gmail.com", spent: 15600, joined: "2026-10-10", status: "Inactive" },
-  { id: 7, name: "Ravindu Silva", phone: "0781234567", email: "ravindu@gmail.com", spent: 28900, joined: "2026-10-15", status: "Active" },
-  { id: 8, name: "Ishara Fernando", phone: "0745678901", email: "ishara@gmail.com", spent: 7600, joined: "2026-10-18", status: "Active" },
-];
+const API_URL = "http://localhost:5000/api/customers";
+
 
 const navigation = [
   { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
@@ -49,7 +38,7 @@ const navigation = [
   { label: "Products Management", icon: Package, page: "products" },
   { label: "Inventory", icon: Warehouse, page: "inventory", count: 5 },
   { label: "Suppliers Management", icon: Truck, page: "suppliers" },
-   { label: "Purchase Orders", page: "purchase_orders", icon: ClipboardList },
+  { label: "Purchase Orders", icon: ClipboardList, page: "Purchase Orders" },
   { label: "Customer Management", icon: Users, page: "customers" },
   { label: "Sales History", icon: History, page: "sales_history" },
   { label: "Reports", icon: ChartNoAxesCombined, page: "reports" },
@@ -60,25 +49,42 @@ const emptyCustomer = {
   name: "",
   phone: "",
   email: "",
-  spent: "0",
   status: "Active",
 };
 
-const loyaltyInfo = {
-  1: { points: 245, level: "Silver" },
-  2: { points: 390, level: "Gold" },
-  4: { points: 520, level: "Platinum" },
-  7: { points: 310, level: "Gold" },
-};
-
-const money = (amount) =>
-  Number(amount || 0).toLocaleString("en-LK", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 
 export default function CustomerManagement({ onNavigate, onLogout }) {
-  const [customers, setCustomers] = useState(initialCustomers);
+  const [customers, setCustomers] = useState([]);
+    useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await fetch(API_URL, {
+          credentials: "include",
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to load customers");
+        }
+
+        setCustomers(
+          data.map((customer) => ({
+            ...customer,
+            joined: customer.joined_date
+              ? String(customer.joined_date).slice(0, 10)
+              : "",
+          }))
+        );
+      } catch (error) {
+        console.error("Error loading customers:", error);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
+
+
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [page, setPage] = useState(1);
@@ -89,6 +95,7 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
   const [form, setForm] = useState(emptyCustomer);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  
 
   const pageSize = 5;
 
@@ -100,18 +107,23 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
   }, [notice]);
 
   const filteredCustomers = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  const query = search.trim().toLowerCase();
 
-    return customers.filter((customer) => {
-      const text =
-        `${customer.name} ${customer.phone} ${customer.email}`.toLowerCase();
+  return customers.filter((customer) => {
+    const text = `
+      ${customer.name}
+      ${customer.id}
+      ${String(customer.id).slice(-6)}
+      ${customer.phone}
+      ${customer.email}
+    `.toLowerCase();
 
-      return (
-        text.includes(query) &&
-        (filter === "All" || customer.status === filter)
-      );
-    });
-  }, [customers, search, filter]);
+    return (
+      text.includes(query) &&
+      (filter === "All" || customer.status === filter)
+    );
+  });
+}, [customers, search, filter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -131,14 +143,6 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
     (customer) => customer.joined.startsWith(currentMonth)
   ).length;
 
-  const loyaltyCustomers = customers.filter(
-    (customer) => loyaltyInfo[customer.id]
-  );
-
-  const totalPoints = loyaltyCustomers.reduce(
-    (sum, customer) => sum + loyaltyInfo[customer.id].points,
-    0
-  );
 
   function showNotice(message) {
     setNotice(message);
@@ -175,53 +179,94 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
       name: customer.name,
       phone: customer.phone,
       email: customer.email,
-      spent: String(customer.spent),
       status: customer.status,
     });
     setShowModal(true);
   }
 
-  function saveCustomer(event) {
-    event.preventDefault();
+  
+  async function saveCustomer(event) {
+  event.preventDefault();
 
-    if (editingId !== null) {
-      setCustomers((current) =>
-        current.map((customer) =>
-          customer.id === editingId
-            ? {
-                ...customer,
-                ...form,
-                spent: Number(form.spent) || 0,
-              }
-            : customer
-        )
-      );
+  const customerData = {
+    name: form.name,
+    phone: form.phone,
+    email: form.email,
+    status: form.status,
+  };
 
-      showNotice("Customer updated successfully!");
-    } else {
-      const customer = {
-        ...form,
-        id: Date.now(),
-        spent: Number(form.spent) || 0,
-        joined: new Date().toISOString().slice(0, 10),
-      };
+  try {
+    const response = await fetch(
+      editingId !== null ? `${API_URL}/${editingId}` : API_URL,
+      {
+        method: editingId !== null ? "PUT" : "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(customerData),
+      }
+    );
 
-      setCustomers((current) => [customer, ...current]);
-      setPage(1);
-      showNotice("Customer added successfully!");
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to save customer");
     }
+
+    const refreshResponse = await fetch(API_URL, {
+      credentials: "include",
+    });
+
+    const customersData = await refreshResponse.json();
+
+    if (!refreshResponse.ok) {
+      throw new Error("Failed to refresh customers");
+    }
+
+    setCustomers(
+      customersData.map((customer) => ({
+        ...customer,
+        joined: customer.joined_date
+          ? String(customer.joined_date).slice(0, 10)
+          : "",
+      }))
+    );
+
+    setPage(1);
+    showNotice(
+      editingId !== null
+        ? "Customer updated successfully!"
+        : "Customer added successfully!"
+    );
 
     setShowModal(false);
     setForm(emptyCustomer);
     setEditingId(null);
+  } catch (error) {
+    showNotice(error.message);
   }
+}
+  
 
-  function deleteCustomer(id) {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this customer?"
-    );
+  async function deleteCustomer(id) {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this customer?"
+  );
 
-    if (!confirmed) return;
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to delete customer");
+    }
 
     const updatedCustomers = customers.filter(
       (customer) => customer.id !== id
@@ -232,19 +277,18 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
     setPage((current) =>
       Math.min(
         current,
-        Math.max(1, Math.ceil(updatedCustomers.filter((customer) => {
-          const query = search.trim().toLowerCase();
-          const matchesSearch =
-            `${customer.name} ${customer.phone} ${customer.email}`
-              .toLowerCase()
-              .includes(query);
-          return matchesSearch && (filter === "All" || customer.status === filter);
-        }).length / pageSize))
+        Math.max(
+          1,
+          Math.ceil(updatedCustomers.length / pageSize)
+        )
       )
     );
 
     showNotice("Customer deleted successfully!");
+  } catch (error) {
+    showNotice(error.message);
   }
+}
 
   return (
     <div className="sp-dashboard customer-app">
@@ -336,7 +380,7 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
                   setSearch(event.target.value);
                   setPage(1);
                 }}
-                placeholder="Search customers..."
+                placeholder="Search by customer name or ID..."
               />
               {search && (
                 <button
@@ -379,7 +423,6 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
                 <strong>Owner</strong>
                 <small>Store Owner</small>
               </div>
-              <ChevronDown size={14} />
             </div>
           </div>
         </header>
@@ -436,66 +479,6 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
             </article>
           </section>
 
-          {/* Loyalty */}
-          <section className="customer-loyalty-panel">
-            <div className="customer-loyalty-heading">
-              <div>
-                <h2>
-                  <Crown size={19} /> Loyalty Customers
-                </h2>
-                <p>Your valued customers and their reward points</p>
-              </div>
-
-              <span className="customer-loyalty-badge">
-                {loyaltyCustomers.length} Members
-              </span>
-            </div>
-
-            <div className="customer-loyalty-stats">
-              <article>
-                <span>Total Loyalty Members</span>
-                <h3>{loyaltyCustomers.length}</h3>
-              </article>
-
-              <article>
-                <span>Total Reward Points</span>
-                <h3>{totalPoints.toLocaleString()}</h3>
-              </article>
-            </div>
-
-            <div className="customer-loyalty-list">
-              {loyaltyCustomers.map((customer) => (
-                <div className="customer-loyalty-item" key={customer.id}>
-                  <div className="customer-loyalty-avatar">
-                    {customer.name
-                      .split(" ")
-                      .map((part) => part[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase()}
-                  </div>
-
-                  <div className="customer-loyalty-person">
-                    <strong>{customer.name}</strong>
-                    <span>{customer.phone}</span>
-                  </div>
-
-                  <div className="customer-loyalty-points">
-                    <strong>{loyaltyInfo[customer.id].points} pts</strong>
-                    <span>Reward points</span>
-                  </div>
-
-                  <span
-                    className={`customer-loyalty-level ${loyaltyInfo[
-                      customer.id
-                    ].level.toLowerCase()}`}
-                  >
-                    {loyaltyInfo[customer.id].level}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
 
           {/* Customer directory */}
           <section className="customer-directory-panel">
@@ -597,12 +580,16 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
                         </div>
                       </td>
 
-                      <td>
-                        <strong className="customer-spent">
-                          Rs. {money(customer.spent)}
-                        </strong>
-                      </td>
-
+                    <td>
+                      <strong>
+                        Rs.{" "}
+                        {Number(customer.total_spent || 0).toLocaleString("en-LK", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                        })}
+                      </strong>
+                    </td>
+                      
                       <td>
                         <span className="customer-joined-date">
                           {customer.joined}
@@ -779,18 +766,6 @@ export default function CustomerManagement({ onNavigate, onLogout }) {
                 />
               </label>
 
-              <label>
-                Total spent (Rs.)
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.spent}
-                  onChange={(event) =>
-                    setForm({ ...form, spent: event.target.value })
-                  }
-                />
-              </label>
 
               {editingId !== null && (
                 <label>

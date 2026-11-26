@@ -13,6 +13,10 @@ const itemRoutes = require("./src/routes/itemRoutes");
 const orderRoutes = require("./src/routes/orderRoutes");
 const dashboardRoutes = require("./src/routes/dashboardRoutes");
 const app = express();
+const customerRoutes = require("./src/routes/customerRoutes");
+const settingsRoutes = require("./src/routes/settingsRoutes");
+const { startAutomaticBackup } = require("./src/services/backupService");
+const reportsRoutes = require("./src/routes/reportsRoutes");
 
 const PORT = Number(process.env.PORT || 5000);
 const CLIENT_URL = process.env.CLIENT_URL;
@@ -45,7 +49,7 @@ app.use(
 );
 
 // Parse JSON request bodies and cookies
-app.use(express.json({ limit: "10kb" }));
+app.use(express.json({ limit: "7mb" }));
 app.use(cookieParser());
 
 // Rate limiter for login requests
@@ -100,6 +104,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/customers", customerRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/reports", reportsRoutes);
 
 app.use("/api/dashboard", dashboardRoutes);
 
@@ -110,7 +117,7 @@ app.use((req, res) => {
   });
 });
 
-// Central error handler
+// Central error handlers
 app.use((error, req, res, next) => {
   console.error("Backend error:", error.stack || error.message);
 

@@ -1,5 +1,5 @@
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard, ShoppingCart, Package, Warehouse, Truck,
   ClipboardList, Users, History, ChartNoAxesCombined, Settings,
@@ -7,7 +7,8 @@ import {
   FileSpreadsheet, TrendingUp, DollarSign, Wallet, ChartColumn
 } from "lucide-react";
 import logo from "../img/black logo.png";
-import "./Reports.css";
+import "../style.css";
+
 
 const navigation = [
   { label: "Dashboard", icon: LayoutDashboard, page: "dashboard" },
@@ -36,9 +37,46 @@ const money = (value) =>
     maximumFractionDigits: 2,
   });
 
-function RevenueChart() {
+function RevenueChart({ chartData = [] }) {
+  const data = chartData.map((item) => ({
+    date: String(item.report_date).slice(0, 10),
+    revenue: Number(item.revenue) || 0,
+    purchases: Number(item.purchases) || 0,
+  }));
+
+  if (data.length === 0) {
+    return <p className="reports-empty">No chart data available for this period.</p>;
+  }
+
+  const maxValue = Math.max(
+    ...data.flatMap((item) => [item.revenue, item.purchases]),
+    1
+  );
+
+  const getX = (index) =>
+    data.length === 1 ? 400 : 40 + (index * 720) / (data.length - 1);
+
+  const getY = (value) => 180 - (value / maxValue) * 160;
+
+  const revenuePoints = data
+    .map((item, index) => `${getX(index)},${getY(item.revenue)}`)
+    .join(" ");
+
+  const purchasePoints = data
+    .map((item, index) => `${getX(index)},${getY(item.purchases)}`)
+    .join(" ");
+
+  const revenueArea = `M ${getX(0)},180 ${data
+    .map((item, index) => `L ${getX(index)},${getY(item.revenue)}`)
+    .join(" ")} L ${getX(data.length - 1)},180 Z`;
+
   return (
-    <svg className="report-chart" viewBox="0 0 800 220" role="img" aria-label="Revenue and expenses comparison chart">
+    <svg
+      className="report-chart"
+      viewBox="0 0 800 220"
+      role="img"
+      aria-label="Daily revenue and stock purchases chart"
+    >
       <defs>
         <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#4053d9" stopOpacity=".12" />
@@ -46,31 +84,60 @@ function RevenueChart() {
         </linearGradient>
       </defs>
 
-      {Array.from({ length: 7 }, (_, i) => (
-        <line key={`h${i}`} x1="1" y1={10 + i * 32} x2="799" y2={10 + i * 32} stroke="#e5e9f3" />
+      {Array.from({ length: 6 }, (_, i) => (
+        <line
+          key={i}
+          x1="40"
+          y1={20 + i * 32}
+          x2="760"
+          y2={20 + i * 32}
+          stroke="#e5e9f3"
+        />
       ))}
 
-      {Array.from({ length: 21 }, (_, i) => (
-        <line key={`v${i}`} x1={1 + i * 40} y1="10" x2={1 + i * 40} y2="202" stroke="#e5e9f3" />
-      ))}
+      <path d={revenueArea} fill="url(#revenueFill)" />
 
-      <path
-        d="M1 150 C70 130 100 128 150 135 S240 120 290 80 S380 48 430 90 S510 155 570 112 S640 25 675 2 S745 15 799 -5 L799 202 L1 202 Z"
-        fill="url(#revenueFill)"
-      />
-      <path
-        d="M1 150 C70 130 100 128 150 135 S240 120 290 80 S380 48 430 90 S510 155 570 112 S640 25 675 2 S745 15 799 -5"
-        fill="none" stroke="#1936ad" strokeWidth="2.5"
-      />
-      <path
-        d="M1 168 C70 155 100 153 150 160 S240 155 290 135 S380 110 430 135 S510 178 570 157 S640 105 675 100 S745 87 799 98"
-        fill="none" stroke="#f22d36" strokeWidth="1.7" strokeDasharray="3 4"
+      <polyline
+        points={revenuePoints}
+        fill="none"
+        stroke="#1936ad"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
       />
 
-      {["WK 1", "WK 2", "WK 3", "WK 4", "WK 5"].map((week, i) => (
-        <text key={week} x={20 + i * 188} y="216" fill="#7b8090" fontSize="10">
-          {week}
-        </text>
+      <polyline
+        points={purchasePoints}
+        fill="none"
+        stroke="#f22d36"
+        strokeWidth="1.7"
+        strokeDasharray="3 4"
+        strokeLinejoin="round"
+      />
+
+      {data.map((item, index) => (
+        <g key={item.date}>
+          <circle
+            cx={getX(index)}
+            cy={getY(item.revenue)}
+            r="3"
+            fill="#1936ad"
+          />
+          <circle
+            cx={getX(index)}
+            cy={getY(item.purchases)}
+            r="3"
+            fill="#f22d36"
+          />
+          <text
+            x={getX(index)}
+            y="216"
+            textAnchor="middle"
+            fill="#7b8090"
+            fontSize="10"
+          >
+            {item.date.slice(5)}
+          </text>
+        </g>
       ))}
     </svg>
   );
@@ -85,11 +152,47 @@ function Reports({ onNavigate, onLogout }) {
   const [notice, setNotice] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
 
-  const products = useMemo(
-    () => initialProducts.filter((product) =>
-      `${product.name} ${product.category}`.toLowerCase().includes(search.toLowerCase())
+    const [reportData, setReportData] = useState(null);
+    console.log("Reports API Data:", reportData);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!dateRange.from || !dateRange.to) return;
+
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(
+          `http://localhost:5000/api/reports?from=${dateRange.from}&to=${dateRange.to}`,
+          { credentials: "include" }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to load reports.");
+        }
+
+        const data = await response.json();
+        setReportData(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, [dateRange.from, dateRange.to]);
+
+    const products = useMemo(
+    () => (reportData?.topProducts || []).filter((product) =>
+      `${product.name} ${product.category}`
+        .toLowerCase()
+        .includes(search.toLowerCase())
     ),
-    [search]
+    [reportData, search]
   );
 
   const exportCSV = () => {
@@ -150,6 +253,13 @@ function Reports({ onNavigate, onLogout }) {
           })}
         </nav>
 
+        <div className="sp-help-card">
+          <strong>Need help?</strong>
+          <p>
+            Check your stock and sales insights to make better decisions.
+          </p>
+        </div>
+
         <div className="sp-sidebar-bottom">
           <button className="sp-nav-item" onClick={onLogout}>
             <LogOut size={19} />
@@ -195,7 +305,7 @@ function Reports({ onNavigate, onLogout }) {
               <div className="sp-avatar">O</div>
               <div>
                 <strong>Owner</strong>
-                <span>Administrator</span>
+                <span>Store Owner</span>
               </div>
             </div>
           </div>
@@ -232,9 +342,6 @@ function Reports({ onNavigate, onLogout }) {
             </div>
 
             <div className="reports-export-buttons">
-              <button className="reports-export-pdf" type="button" onClick={() => window.print()}>
-                <FileText size={17} /> Export PDF
-              </button>
               <button className="reports-export-excel" type="button" onClick={exportCSV}>
                 <FileSpreadsheet size={17} /> Export Excel
               </button>
@@ -245,44 +352,32 @@ function Reports({ onNavigate, onLogout }) {
             <article className="reports-summary-card">
               <div className="reports-summary-top">
                 <span className="reports-summary-icon blue"><Wallet size={21} /></span>
-                <span className="reports-growth">+15.2%</span>
               </div>
-              <p>Total Expenses</p>
-              <h2>Rs. 1,358,250.25</h2>
+            <p>Stock Purchases</p>
+            <h2>Rs. {money(reportData?.totalPurchases || 0)}</h2>
             </article>
 
             <article className="reports-summary-card">
               <div className="reports-summary-top">
                 <span className="reports-summary-icon green"><TrendingUp size={21} /></span>
-                <span className="reports-growth">+12.5%</span>
               </div>
-              <p>Total Revenue</p>
-              <h2>Rs. 1,584,652.00</h2>
+            <p>Total Revenue</p>
+            <h2>Rs. {money(reportData?.totalRevenue || 0)}</h2>
             </article>
 
             <article className="reports-summary-card">
               <div className="reports-summary-top">
                 <span className="reports-summary-icon orange"><DollarSign size={21} /></span>
-                <span className="reports-growth">+11.5%</span>
               </div>
-              <p>Net Profit</p>
-              <h2>Rs. 1,884,652.00</h2>
-            </article>
-
-            <article className="reports-summary-card">
-              <div className="reports-summary-top">
-                <span className="reports-summary-icon red"><ChartColumn size={21} /></span>
-                <span className="reports-growth">+2.5%</span>
-              </div>
-              <p>Gross Profit</p>
-              <h2>Rs. 1,584.05</h2>
+            <p>Revenue Balance</p>
+            <h2>Rs. {money(reportData?.revenueAfterPurchases || 0)}</h2>
             </article>
           </section>
 
           <section className="reports-chart-panel">
             <div className="reports-chart-heading">
               <div>
-                <h3>Revenue vs Expenses</h3>
+                <h3>Revenue vs Stock Purchases</h3>
                 <p>
                   Performance tracking for{" "}
                   {dateRange.from && dateRange.to
@@ -292,10 +387,10 @@ function Reports({ onNavigate, onLogout }) {
               </div>
               <div className="reports-legend">
                 <span><i className="revenue-dot" /> Revenue</span>
-                <span><i className="expenses-dot" /> Expenses</span>
+                <span><i className="expenses-dot" /> Stock Purchases</span>
               </div>
             </div>
-            <RevenueChart />
+            <RevenueChart chartData={reportData?.chartData || []} />
           </section>
 
           <section className="reports-bottom-grid">
@@ -330,25 +425,52 @@ function Reports({ onNavigate, onLogout }) {
             </div>
 
             <aside className="reports-inventory-panel">
-              <h3>Inventory Velocity</h3>
-              <div className="reports-velocity-item">
-                <div className="reports-velocity-heading">
-                  <strong>Fast Moving Items</strong>
-                  <span>58% of stock</span>
-                </div>
-                <div className="reports-progress"><span className="fast-moving" /></div>
-                <p>Items clearing in &lt; 46 days</p>
-              </div>
+            <h3>Inventory Velocity</h3>
 
-              <div className="reports-velocity-item">
-                <div className="reports-velocity-heading">
-                  <strong>Slow Moving Items</strong>
-                  <span>42% of stock</span>
-                </div>
-                <div className="reports-progress"><span className="slow-moving" /></div>
-                <p>Items clearing in &lt; 7 days</p>
-              </div>
-            </aside>
+            <div className="reports-velocity-item">
+            <div className="reports-velocity-heading">
+              <strong>Fast Moving Items</strong>
+            <span>
+              {reportData?.inventoryVelocity?.fastPercentage ?? 0}% of items
+            </span>
+            </div>
+
+           <div className="reports-progress">
+           <span
+            className="fast-moving"
+            style={{
+             width: `${reportData?.inventoryVelocity?.fastPercentage ?? 0}%`
+        }}
+      />
+          </div>
+
+          <p>
+            {reportData?.inventoryVelocity?.fastCount ?? 0} items · Clearing in 7 days or less
+          </p>
+        </div>
+
+      <div className="reports-velocity-item">
+        <div className="reports-velocity-heading">
+          <strong>Slow Moving Items</strong>
+          <span>
+          {reportData?.inventoryVelocity?.slowPercentage ?? 0}% of items
+          </span>
+      </div>
+
+    <div className="reports-progress">
+      <span
+        className="slow-moving"
+        style={{
+          width: `${reportData?.inventoryVelocity?.slowPercentage ?? 0}%`
+        }}
+      />
+    </div>
+
+    <p>
+      {reportData?.inventoryVelocity?.slowCount ?? 0} items · More than 46 days or no sales
+    </p>
+  </div>
+</aside>
           </section>
 
           <footer className="reports-footer">
